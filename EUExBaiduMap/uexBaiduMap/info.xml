@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <uexplugins>
     <plugin
-        uexName="uexBaiduMap" version="3.1.11" build="11">
-        <info>11.修改uexBaiduMap.plist文件NSLocationWhenInUseUsageDescription字段对应value的类型为字符串</info>
+        uexName="uexBaiduMap" version="3.1.12" build="12">
+        <info>12.修复onMapLongClickListener回调结果异常的bug</info>
+        <build>11.修改uexBaiduMap.plist文件NSLocationWhenInUseUsageDescription字段对应value的类型为字符串</build>
         <build>10:新增onMarkerClickListener和onMarkerBubbleClickListener监听方法</build>
         <build>9:增加onZoomLevelChangeListener地图缩放级别改变时,获取缩放级别和中心点的监听</build>
         <build>8:增加隐藏地图hideMap和显示地图showMap的接口</build>

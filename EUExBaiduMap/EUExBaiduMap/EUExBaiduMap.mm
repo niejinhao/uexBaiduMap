@@ -1070,7 +1070,7 @@
  */
 - (void)mapview:(BMKMapView *)mapView onLongClick:(CLLocationCoordinate2D)coordinate
 {
-    NSString * onString = [NSString stringWithFormat:@"{\"longitude\": \"%f\",\"latitude\": \"%f\"}",coordinate.longitude,coordinate.longitude];
+    NSString * onString = [NSString stringWithFormat:@"{\"longitude\": \"%f\",\"latitude\": \"%f\"}",coordinate.longitude,coordinate.latitude];
     NSString * inCallbackName = @"uexBaiduMap.onMapLongClickListener";
     NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",inCallbackName,inCallbackName,onString];
     [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
