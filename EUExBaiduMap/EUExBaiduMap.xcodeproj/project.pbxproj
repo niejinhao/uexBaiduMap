@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3C1AD5A41BD5F5250091D2A1 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3C1AD5A61BD5F5250091D2A1 /* Localizable.strings */; };
+		3C5190951BE05A2E00D6B67D /* Localizations.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3C5190971BE05A2E00D6B67D /* Localizations.strings */; };
 		3C70BD201A0733D200C32A1F /* EUExBaiduMap.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3C70BD1F1A0733D200C32A1F /* EUExBaiduMap.h */; };
 		3C70BD221A0733D200C32A1F /* EUExBaiduMap.mm in Sources */ = {isa = PBXBuildFile; fileRef = 3C70BD211A0733D200C32A1F /* EUExBaiduMap.mm */; };
 		3C80C04B1A2D4EBA00A3D8B9 /* SearchPlanObject.mm in Sources */ = {isa = PBXBuildFile; fileRef = 3C80C04A1A2D4EBA00A3D8B9 /* SearchPlanObject.mm */; };
@@ -47,10 +47,9 @@
 
 /* Begin PBXFileReference section */
 		3C1AD59A1BD5F4E50091D2A1 /* uexBaiduMap.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = uexBaiduMap.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
-		3C1AD59C1BD5F4E50091D2A1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		3C1AD5A51BD5F5250091D2A1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
-		3C1AD5A71BD5F5310091D2A1 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		3C1AD5A91BD60CDF0091D2A1 /* PrefixHeader.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrefixHeader.pch; sourceTree = "<group>"; };
+		3C5190961BE05A2E00D6B67D /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizations.strings; sourceTree = "<group>"; };
+		3C5190981BE05A3200D6B67D /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizations.strings"; sourceTree = "<group>"; };
 		3C70BD1C1A0733D200C32A1F /* libuexBaiduMap.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libuexBaiduMap.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C70BD1F1A0733D200C32A1F /* EUExBaiduMap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EUExBaiduMap.h; sourceTree = "<group>"; };
 		3C70BD211A0733D200C32A1F /* EUExBaiduMap.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = EUExBaiduMap.mm; sourceTree = "<group>"; };
@@ -171,7 +170,7 @@
 		3C1AD59B1BD5F4E50091D2A1 /* uexBaiduMapBundle */ = {
 			isa = PBXGroup;
 			children = (
-				3C1AD59C1BD5F4E50091D2A1 /* Info.plist */,
+				3C5190971BE05A2E00D6B67D /* Localizations.strings */,
 			);
 			path = uexBaiduMapBundle;
 			sourceTree = "<group>";
@@ -179,7 +178,6 @@
 		3C70BD131A0733D200C32A1F = {
 			isa = PBXGroup;
 			children = (
-				3C1AD5A61BD5F5250091D2A1 /* Localizable.strings */,
 				3C70BD1E1A0733D200C32A1F /* EUExBaiduMap */,
 				3C1AD59B1BD5F4E50091D2A1 /* uexBaiduMapBundle */,
 				3C70BD381A07341B00C32A1F /* Frameworks */,
@@ -432,7 +430,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3C1AD5A41BD5F5250091D2A1 /* Localizable.strings in Resources */,
+				3C5190951BE05A2E00D6B67D /* Localizations.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -473,13 +471,13 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		3C1AD5A61BD5F5250091D2A1 /* Localizable.strings */ = {
+		3C5190971BE05A2E00D6B67D /* Localizations.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
-				3C1AD5A51BD5F5250091D2A1 /* en */,
-				3C1AD5A71BD5F5310091D2A1 /* zh-Hans */,
+				3C5190961BE05A2E00D6B67D /* en */,
+				3C5190981BE05A3200D6B67D /* zh-Hans */,
 			);
-			name = Localizable.strings;
+			name = Localizations.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -494,7 +492,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_TESTABILITY = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
-				INFOPLIST_FILE = uexBaiduMapBundle/Info.plist;
+				INFOPLIST_FILE = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zywx.uexBaiduMapBundle;
@@ -515,7 +513,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_NO_COMMON_BLOCKS = YES;
-				INFOPLIST_FILE = uexBaiduMapBundle/Info.plist;
+				INFOPLIST_FILE = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zywx.uexBaiduMapBundle;
