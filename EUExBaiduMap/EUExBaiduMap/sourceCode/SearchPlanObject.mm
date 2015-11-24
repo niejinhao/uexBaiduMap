@@ -213,7 +213,7 @@
             if(i==0){
                 RouteAnnotation* item = [[RouteAnnotation alloc]init];
                 item.coordinate = plan.starting.location;
-                item.title = @"起点";
+                item.title = UEX_LOCALIZEDSTRING(@"起点");
                 item.type = 0;
                 [_mapView addAnnotation:item]; // 添加起点标注
                 [_annotations addObject:item];
@@ -222,7 +222,7 @@
             }else if(i==size-1){
                 RouteAnnotation* item = [[RouteAnnotation alloc]init];
                 item.coordinate = plan.terminal.location;
-                item.title = @"终点";
+                item.title = UEX_LOCALIZEDSTRING(@"终点");
                 item.type = 1;
                 [_mapView addAnnotation:item]; // 添加终点标注
                 [_annotations addObject:item];
@@ -298,7 +298,7 @@
             if(i==0){
                 RouteAnnotation* item = [[RouteAnnotation alloc]init];
                 item.coordinate = plan.starting.location;
-                item.title = @"起点";
+                item.title = UEX_LOCALIZEDSTRING(@"起点");
                 item.type = 0;
                 [_mapView addAnnotation:item]; // 添加起点标注
                 [_annotations addObject:item];
@@ -307,7 +307,7 @@
             }else if(i==size-1){
                 RouteAnnotation* item = [[RouteAnnotation alloc]init];
                 item.coordinate = plan.terminal.location;
-                item.title = @"终点";
+                item.title = UEX_LOCALIZEDSTRING(@"终点");
                 item.type = 1;
                 [_mapView addAnnotation:item]; // 添加起点标注
                 [_annotations addObject:item];
@@ -377,7 +377,7 @@
             if(i==0){
                 RouteAnnotation* item = [[RouteAnnotation alloc]init];
                 item.coordinate = plan.starting.location;
-                item.title = @"起点";
+                item.title = UEX_LOCALIZEDSTRING(@"起点");
                 item.type = 0;
                 [_mapView addAnnotation:item]; // 添加起点标注
                 [_annotations addObject:item];
@@ -386,7 +386,7 @@
             }else if(i==size-1){
                 RouteAnnotation* item = [[RouteAnnotation alloc]init];
                 item.coordinate = plan.terminal.location;
-                item.title = @"终点";
+                item.title = UEX_LOCALIZEDSTRING(@"终点");
                 item.type = 1;
                 [_mapView addAnnotation:item]; // 添加起点标注
                 [_annotations addObject:item];

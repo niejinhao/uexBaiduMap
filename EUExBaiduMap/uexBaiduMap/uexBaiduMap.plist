@@ -5,7 +5,7 @@
 	<key>UexKeyValues</key>
 	<dict>
 		<key>uexBaiduMapKey</key>
-		<string>AVgY4au3likbr10MFFaqLq4G</string>
+		<string>$uexBaiduMap_APIKey$</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string></string>
 	</dict>

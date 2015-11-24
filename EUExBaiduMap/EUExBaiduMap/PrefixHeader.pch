@@ -1,0 +1,16 @@
+//
+//  PrefixHeader.pch
+//  EUExImage
+//
+//  Created by CeriNo on 15/9/28.
+//  Copyright © 2015年 AppCan. All rights reserved.
+//
+
+#ifndef PrefixHeader_pch
+#ifdef __OBJC__
+#import <Foundation/Foundation.h>
+#import<UIKit/UIKit.h>
+#import "EUtility.h"
+#define UEX_LOCALIZEDSTRING(...) [EUtility uexPlugin:@"uexBaiduMap" localizedString:__VA_ARGS__,nil]
+#endif
+#endif /* PrefixHeader_pch */
