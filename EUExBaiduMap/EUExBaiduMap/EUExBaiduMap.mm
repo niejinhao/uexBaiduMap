@@ -275,15 +275,16 @@
 //BMKMapTypeStandard   = 1,               ///< 标准地图
 //BMKMapTypeSatellite  = 4,               ///< 卫星地图
 -(void)setMapType:(NSMutableArray *)inArguments{
-    NSString * mapType=nil;
-    if (inArguments && inArguments.count > 0) {
-        mapType = [inArguments objectAtIndex:0];
+    if (!inArguments || inArguments.count == 0) {
+        return;
     }
-    if ([mapType isEqualToString:@"1"]) {
-        _currentMapView.mapType = BMKMapTypeStandard;
-    }else{
+    NSInteger mapType = [inArguments[0] integerValue];
+    if (mapType == 1) {
+         _currentMapView.mapType = BMKMapTypeStandard;
+    }else if (mapType == 2){
         _currentMapView.mapType = BMKMapTypeSatellite;
     }
+
 }
 //设置是否开启实时交通
 -(void)setTrafficEnabled:(NSMutableArray *)inArguments{
@@ -391,6 +392,7 @@
         }
         
     }
+
     [_currentMapView addAnnotation:oldPointAnnotation];
     
 }
@@ -400,7 +402,7 @@
     ACPointAnnotation * pAnnotation = [self.pointAnnotationDic objectForKey:idStr];
     [_currentMapView selectAnnotation:pAnnotation animated:YES];
     for (ACPointAnnotation * pAnnotation in [self.pointAnnotationDic allValues]) {
-        if ([pAnnotation.pointId isEqualToString:idStr]) {
+        if ([pAnnotation.pointId isEqual:idStr]) {
             [_currentMapView selectAnnotation:pAnnotation animated:YES];
         } else {
             [_currentMapView deselectAnnotation:pAnnotation animated:YES];
@@ -416,8 +418,21 @@
 
 -(void)removeMakersOverlay:(NSMutableArray *)inArguments {
     NSString * ids = [inArguments objectAtIndex:0];
-    NSString * firstStr = [ids stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"[]"]];
-    NSArray * idArray = [firstStr componentsSeparatedByString:@","];
+    NSArray *idArray = nil;
+    id param = inArguments[1];
+    if (!param) {
+        return;
+    }
+    if ([param isKindOfClass:[NSArray class]]) {
+        idArray = param;
+    }
+    if ([param isKindOfClass:[NSString class]]) {
+        NSString * firstStr = [param stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"[]"]];
+        idArray = [firstStr componentsSeparatedByString:@","];
+    }
+    if (!idArray) {
+        return;
+    }
     
     if ([idArray count] == 0) {
         [_currentMapView removeAnnotations:_currentMapView.annotations];
@@ -943,14 +958,14 @@
 
 //清除覆盖物
 -(void)removeOverlay:(NSMutableArray *)inArguments{
-    if (![inArguments isKindOfClass:[NSMutableArray class]] || inArguments.count == 0) {
+    if (![inArguments isKindOfClass:[NSArray class]] || inArguments.count == 0) {
         if (_currentMapView) {
             NSArray * overlaysArray = [NSArray arrayWithArray:_currentMapView.overlays];
             [_currentMapView removeOverlays:overlaysArray];
             [_overlayViewDic removeAllObjects];
         }
     }
-    if ([inArguments isKindOfClass:[NSMutableArray class]] && inArguments.count > 0) {
+    if ([inArguments isKindOfClass:[NSArray class]] && inArguments.count > 0) {
         
         for (NSString * idStr in inArguments) {
             if ([_overlayViewDic objectForKey:idStr]) {
@@ -1095,50 +1110,52 @@
 //************************UI控制******************************
 ///设定地图View能否支持用户多点缩放(双指)
 -(void)setZoomEnable:(NSMutableArray *)inArguments{
-    NSString * str = [inArguments objectAtIndex:0];
-    if ([str isEqualToString:@"0"]) {
-        [_currentMapView setZoomEnabled:NO];
-    } else if ([str isEqualToString:@"1"]){
-        [_currentMapView setZoomEnabled:YES];
+    if (!inArguments || inArguments.count == 0) {
+        return;
     }
+    BOOL enable = [inArguments[0] boolValue];
+    [_currentMapView setZoomEnabled:enable];
 }
 
 ///设定地图View能否支持用户缩放(双击或双指单击)
 -(void)setZoomEnabledWithTap:(NSMutableArray *)inArguments{
-    NSString * str = [inArguments objectAtIndex:0];
-    if ([str isEqualToString:@"0"]) {
-        [_currentMapView setZoomEnabledWithTap:NO];
-    }else if([str isEqualToString:@"1"]){
-        [_currentMapView setZoomEnabledWithTap:YES];
+    if (!inArguments || inArguments.count == 0) {
+        return;
     }
+    BOOL enable = [inArguments[0] boolValue];
+    [_currentMapView setZoomEnabledWithTap:enable];
+
 }
 
 ///设定地图View能否支持用户移动地图
 -(void)setScrollEnable:(NSMutableArray *)inArguments{
-    NSString * str = [inArguments objectAtIndex:0];
-    if ([str isEqualToString:@"0"]) {
-        [_currentMapView setScrollEnabled:NO];
-    }else if([str isEqualToString:@"1"]){
-        [_currentMapView setScrollEnabled:YES];
+    if (!inArguments || inArguments.count == 0) {
+        return;
     }
+    BOOL enable = [inArguments[0] boolValue];
+    
+    [_currentMapView setScrollEnabled:enable];
+    
 }
 ///设定地图View能否支持俯仰角
 -(void)setOverlookEnable:(NSMutableArray *)inArguments{
-    NSString * str = [inArguments objectAtIndex:0];
-    if ([str isEqualToString:@"0"]) {
-        [_currentMapView setOverlookEnabled:NO];
-    } else {
-        [_currentMapView setOverlookEnabled:YES];
+    if (!inArguments || inArguments.count == 0) {
+        return;
     }
+    BOOL enable = [inArguments[0] boolValue];
+    [_currentMapView setOverlookEnabled:enable];
+
 }
 ///设定地图View能否支持旋转
 -(void)setRotateEnable:(NSMutableArray *)inArguments{
-    NSString * str = [inArguments objectAtIndex:0];
-    if ([str isEqualToString:@"0"]) {
-        [_currentMapView setRotateEnabled:NO];
-    }else if([str isEqualToString:@"1"]){
-        [_currentMapView setRotateEnabled:YES];
+    
+    if (!inArguments || inArguments.count == 0) {
+        return;
     }
+    BOOL enable = [inArguments[0] boolValue];
+    [_currentMapView setRotateEnabled:enable];
+    
+
 }
 //放大地图
 -(void)zoomIn:(NSMutableArray *)inArguments{
@@ -1198,12 +1215,12 @@
 }
 /// 设定是否显式比例尺
 -(void)showMapScaleBar:(NSMutableArray *)inArguments{
-    NSString * str = [inArguments objectAtIndex:0];
-    if ([str isEqualToString:@"0"]) {
-        [_currentMapView setShowMapScaleBar:NO];
-    }else{
-        [_currentMapView setShowMapScaleBar:YES];
+    
+    if (!inArguments || inArguments.count == 0) {
+        return;
     }
+    BOOL enable = [inArguments[0] boolValue];
+    [_currentMapView setShowMapScaleBar:enable];
 }
 -(void)setMapScaleBarPosition:(NSMutableArray *)inArguments{
     float x = [[inArguments objectAtIndex:0] floatValue];
