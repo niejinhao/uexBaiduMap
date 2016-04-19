@@ -417,9 +417,11 @@
 }
 
 -(void)removeMakersOverlay:(NSMutableArray *)inArguments {
-    NSString * ids = [inArguments objectAtIndex:0];
+    if(inArguments.count == 0){
+        return;
+    }
     NSArray *idArray = nil;
-    id param = inArguments[1];
+    id param = inArguments[0];
     if (!param) {
         return;
     }
