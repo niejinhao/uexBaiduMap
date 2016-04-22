@@ -674,7 +674,7 @@
         }
         
         // 从天上掉下效果
-        ((BMKPinAnnotationView*)newAnnotationView).animatesDrop = YES;
+        ((BMKPinAnnotationView*)newAnnotationView).animatesDrop = NO;
         // 设置可拖拽
         ((BMKPinAnnotationView*)newAnnotationView).draggable = NO;
         [_pointAnnotationViewDic setObject:newAnnotationView forKey:newAnnotation.pointId];
