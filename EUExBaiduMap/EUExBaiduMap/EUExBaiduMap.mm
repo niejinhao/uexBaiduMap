@@ -171,7 +171,7 @@
         NSString * onString = [NSString stringWithFormat:@"{\"errorInfo\": \"%d\"}",iError];
         NSString * inCallbackName = @"uexBaiduMap.onSDKReceiverError";
         NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",inCallbackName,inCallbackName,onString];
-        [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
+        [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
     }
     
 }
@@ -187,7 +187,7 @@
         NSString * onString = [NSString stringWithFormat:@"{\"errorInfo\": \"%d\"}",iError];
         NSString * inCallbackName = @"uexBaiduMap.onSDKReceiverError";
         NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",inCallbackName,inCallbackName,onString];
-        [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
+        [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
     }
 }
 //******************************基本功能************************************
@@ -252,7 +252,7 @@
 {
     NSString * inCallbackName = @"uexBaiduMap.cbOpen";
     NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@();}",inCallbackName,inCallbackName];
-    [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
+    [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
 }
 
 
@@ -694,12 +694,12 @@
         if ([aView isEqual:view]) {
             NSString * inCallbackName = @"uexBaiduMap.onMakerClickListner";
             NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",inCallbackName,inCallbackName,pointId];
-            [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
+            [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
             
             //onMarkerClickListener
             NSString *cbName = @"uexBaiduMap.onMarkerClickListener";
             NSString *cbSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",cbName,cbName,pointId];
-            [meBrwView stringByEvaluatingJavaScriptFromString:cbSuccessStr];
+            [EUtility brwView:self.meBrwView evaluateScript:cbSuccessStr];
             
         }
     }
@@ -1013,11 +1013,12 @@
         if ([aView isEqual:view]) {
             NSString * inCallbackName = @"uexBaiduMap.onMakerBubbleClickListner";
             NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",inCallbackName,inCallbackName,pointId];
-            [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
+            [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
+            
             //onMarkerBubbleClickListener
             NSString *cbName = @"uexBaiduMap.onMarkerBubbleClickListener";
             NSString *cbSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",cbName,cbName,pointId];
-            [meBrwView stringByEvaluatingJavaScriptFromString:cbSuccessStr];
+            [EUtility brwView:self.meBrwView evaluateScript:cbSuccessStr];
         }
     }
 }
@@ -1034,7 +1035,7 @@
     double longitude = mapView.centerCoordinate.longitude;
     float zoomLevel = mapView.zoomLevel;
     NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%f\',\'%f\',\'%f\');}",inCallbackName,inCallbackName,zoomLevel,latitude,longitude];
-        [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
+        [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
     }else {
         _isFirstTime = NO;
     }
@@ -1052,7 +1053,7 @@
 //    NSString * onClickedMapPoiStr = [showDic JSONValue];
 //    NSString * inCallbackName = @"uexBaiduMap.onMakerClickListner";
 //    NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",inCallbackName,inCallbackName,onClickedMapPoiStr];
-//    [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
+//    [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
 //    [showDic release];
 }
 /**
@@ -1064,7 +1065,7 @@
     NSString * onString = [NSString stringWithFormat:@"{\"longitude\": \"%f\",\"latitude\": \"%f\"}",coordinate.longitude,coordinate.latitude];
     NSString * inCallbackName = @"uexBaiduMap.onMapClickListener";
     NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",inCallbackName,inCallbackName,onString];
-    [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
+    [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
 }
 
 /**
@@ -1077,7 +1078,7 @@
     NSString * onString = [NSString stringWithFormat:@"{\"longitude\": \"%f\",\"latitude\": \"%f\"}",coordinate.longitude,coordinate.latitude];
     NSString * inCallbackName = @"uexBaiduMap.onMapDoubleClickListener";
     NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",inCallbackName,inCallbackName,onString];
-    [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
+    [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
 }
 
 /**
@@ -1090,7 +1091,7 @@
     NSString * onString = [NSString stringWithFormat:@"{\"longitude\": \"%f\",\"latitude\": \"%f\"}",coordinate.longitude,coordinate.latitude];
     NSString * inCallbackName = @"uexBaiduMap.onMapLongClickListener";
     NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",inCallbackName,inCallbackName,onString];
-    [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
+    [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
     
 }
 //增加地图手势监听(返回值包括缩放等级和中心点坐标)
@@ -1106,7 +1107,7 @@
 //    NSString * onRegionDidChange = [showDic JSONValue];
 //    NSString * inCallbackName = @"uexBaiduMap.onRegionDidChange";
 //    NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",inCallbackName,inCallbackName,onRegionDidChange];
-//    [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
+//    [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
 //    [showDic release];
 //}
 //************************UI控制******************************
@@ -1402,7 +1403,7 @@
 }
 
 -(void)delayCallBack:(NSString *)cbStr {
-    [meBrwView stringByEvaluatingJavaScriptFromString:cbStr];
+    [EUtility brwView:self.meBrwView evaluateScript:cbStr];
 }
 
 //*****************线路规划**********************************
@@ -1551,7 +1552,7 @@
     
     NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",method,method,data];
     
-    [meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
+    [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
     
 }
 

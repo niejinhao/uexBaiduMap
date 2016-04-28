@@ -14,3 +14,6 @@
 @property(nonatomic, retain)UILabel * title;
 
 @end
+@interface UIImage(InternalMethod)
+- (UIImage*)imageRotatedByDegrees:(CGFloat)degrees;
+@end
