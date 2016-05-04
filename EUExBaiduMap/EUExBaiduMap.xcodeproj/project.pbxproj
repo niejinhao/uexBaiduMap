@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		3C5190951BE05A2E00D6B67D /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3C5190971BE05A2E00D6B67D /* Localizable.strings */; };
-		3C70BD201A0733D200C32A1F /* EUExBaiduMap.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3C70BD1F1A0733D200C32A1F /* EUExBaiduMap.h */; };
 		3C70BD221A0733D200C32A1F /* EUExBaiduMap.mm in Sources */ = {isa = PBXBuildFile; fileRef = 3C70BD211A0733D200C32A1F /* EUExBaiduMap.mm */; };
 		3C80C04B1A2D4EBA00A3D8B9 /* SearchPlanObject.mm in Sources */ = {isa = PBXBuildFile; fileRef = 3C80C04A1A2D4EBA00A3D8B9 /* SearchPlanObject.mm */; };
 		3C80C05D1A2D8FC200A3D8B9 /* BusLineObjct.mm in Sources */ = {isa = PBXBuildFile; fileRef = 3C80C05C1A2D8FC200A3D8B9 /* BusLineObjct.mm */; };
@@ -36,10 +35,9 @@
 		3C70BD1A1A0733D200C32A1F /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = "include/$(PRODUCT_NAME)";
+			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
-				3C70BD201A0733D200C32A1F /* EUExBaiduMap.h in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

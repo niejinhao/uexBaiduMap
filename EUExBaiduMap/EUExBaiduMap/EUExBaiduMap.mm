@@ -441,8 +441,18 @@
         [self.pointAnnotationDic removeAllObjects];
         return;
     }
-    for (NSString * idStr in idArray) {
-        NSString * identifier = [idStr stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"\"\""]];
+    for (id aId in idArray) {
+        NSString * identifier = nil;
+        if ([aId isKindOfClass:[NSString class]]) {
+            identifier = aId;
+        }
+        if ([aId isKindOfClass:[NSNumber class]]) {
+            identifier = [aId stringValue];
+        }
+        if (!identifier) {
+            continue;
+        }
+        identifier = [identifier stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"\"\""]];
         ACPointAnnotation * pAnnotation = [self.pointAnnotationDic objectForKey:identifier];
         [_currentMapView removeAnnotation:pAnnotation];
         [self.pointAnnotationDic removeObjectForKey:identifier];
