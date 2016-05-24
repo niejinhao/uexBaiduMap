@@ -6,7 +6,7 @@
 //  Copyright (c) 2014年 com.zywx. All rights reserved.
 //
 
-#import "BMKPointAnnotation.h"
+#import <BaiduMapAPI_Map/BMKPointAnnotation.h>
 
 @interface RouteAnnotation : BMKPointAnnotation
 {

@@ -38,11 +38,11 @@
     
 }
 
--(void)dealloc{
-    [_bgImageView release];
-    [_title release];
-    [super dealloc];
-}
+//-(void)dealloc{
+//    [_bgImageView release];
+//    [_title release];
+//    [super dealloc];
+//}
 
 @end
 

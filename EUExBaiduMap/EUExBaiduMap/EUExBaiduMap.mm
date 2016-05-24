@@ -7,7 +7,7 @@
 //
 
 #import "EUExBaiduMap.h"
-#import "BMapKIt.h"
+#import <BaiduMapAPI_Map/BMKMapView.h>
 #import "JSON.h"
 #import "MapUtility.h"
 #import "ACPointAnnotation.h"
@@ -75,68 +75,110 @@
 
 
 
--(void)dealloc{
-    [super dealloc];
-}
-
+//-(void)dealloc{
+//    [super dealloc];
+//}
+//
+//-(void)clean{
+//    if (_locationService) {
+//        _locationService.delegate = nil;
+//        [_locationService release];
+//    }
+//    
+//    [_routePlanDic removeAllObjects];
+//    [_routePlanDic release];
+//    
+//    [_overlayViewDic removeAllObjects];
+//    [_overlayViewDic release];
+//    
+//    [_overlayDataDic removeAllObjects];
+//    [_overlayDataDic release];
+//    
+//    [_pointAnnotationDic removeAllObjects];
+//    [_pointAnnotationDic release];
+//    
+//    [_pointAnnotationViewDic removeAllObjects];
+//    [_pointAnnotationViewDic release];
+//    
+//    if (_busPoiArray) {
+//        [_busPoiArray removeAllObjects];
+//        [_busPoiArray release];
+//    }
+//    
+//    if (_routeSearch) {
+//        _routeSearch.delegate = nil;
+//        [_routeSearch release];
+//    }
+//    if (_busLineSearch) {
+//        _busLineSearch.delegate = nil;
+//        [_busLineSearch release];
+//    }
+//    if (_POISearch) {
+//        _POISearch.delegate = nil;
+//        [_POISearch release];
+//    }
+//    if (_suggestionSearch) {
+//        _suggestionSearch.delegate = nil;
+//        [_suggestionSearch release];
+//    }
+//    if (_geoCodeSearch) {
+//        _geoCodeSearch.delegate = nil;
+//        [_geoCodeSearch release];
+//    }
+//    if (_currentMapView) {
+//        [_currentMapView setDelegate:nil];
+//        [_currentMapView viewWillDisappear];
+//        [_currentMapView removeFromSuperview];
+//        [_currentMapView release];
+//        //解决百度地图手势，跟root view 手势冲突问题
+//        //        [EUtility setRootViewGestureRecognizerEnabled:YES];
+//        
+//    }
+//    if (_mapManager) {
+//        [_mapManager stop];
+//        [_mapManager release];
+//    }
+//}
 -(void)clean{
     if (_locationService) {
         _locationService.delegate = nil;
-        [_locationService release];
     }
     
     [_routePlanDic removeAllObjects];
-    [_routePlanDic release];
-    
     [_overlayViewDic removeAllObjects];
-    [_overlayViewDic release];
-    
     [_overlayDataDic removeAllObjects];
-    [_overlayDataDic release];
-    
     [_pointAnnotationDic removeAllObjects];
-    [_pointAnnotationDic release];
-    
     [_pointAnnotationViewDic removeAllObjects];
-    [_pointAnnotationViewDic release];
     
     if (_busPoiArray) {
         [_busPoiArray removeAllObjects];
-        [_busPoiArray release];
     }
     
     if (_routeSearch) {
         _routeSearch.delegate = nil;
-        [_routeSearch release];
     }
     if (_busLineSearch) {
         _busLineSearch.delegate = nil;
-        [_busLineSearch release];
     }
     if (_POISearch) {
         _POISearch.delegate = nil;
-        [_POISearch release];
     }
     if (_suggestionSearch) {
         _suggestionSearch.delegate = nil;
-        [_suggestionSearch release];
     }
     if (_geoCodeSearch) {
         _geoCodeSearch.delegate = nil;
-        [_geoCodeSearch release];
     }
     if (_currentMapView) {
         [_currentMapView setDelegate:nil];
         [_currentMapView viewWillDisappear];
         [_currentMapView removeFromSuperview];
-        [_currentMapView release];
         //解决百度地图手势，跟root view 手势冲突问题
 //        [EUtility setRootViewGestureRecognizerEnabled:YES];
 
     }
     if (_mapManager) {
         [_mapManager stop];
-        [_mapManager release];
     }
 }
 
@@ -263,7 +305,7 @@
         [_currentMapView setDelegate:nil];
         [_currentMapView viewWillDisappear];
         [_currentMapView removeFromSuperview];
-        [_currentMapView release];
+//        [_currentMapView release];
         _currentMapView = nil;
         //解决百度地图手势，跟root view 手势冲突问题
 //        [EUtility setRootViewGestureRecognizerEnabled:YES];
@@ -343,7 +385,7 @@
         }
         [_currentMapView addAnnotation:aPoint];
         [self.pointAnnotationDic setObject:aPoint forKey:idStr];
-        [aPoint release];
+//        [aPoint release];
     }
 }
 
@@ -478,7 +520,8 @@
         {
             view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"start_node"];
             if (view == nil) {
-                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"start_node"] autorelease];
+                //                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"start_node"] autorelease];
+                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"start_node"];
                 view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_start.png"]];
                 view.centerOffset = CGPointMake(0, -(view.frame.size.height * 0.5));
                 view.canShowCallout = TRUE;
@@ -490,7 +533,8 @@
         {
             view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"end_node"];
             if (view == nil) {
-                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"end_node"] autorelease];
+//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"end_node"] autorelease];
+                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"end_node"];
                 view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_end.png"]];
                 view.centerOffset = CGPointMake(0, -(view.frame.size.height * 0.5));
                 view.canShowCallout = TRUE;
@@ -502,7 +546,8 @@
         {
             view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"bus_node"];
             if (view == nil) {
-                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"bus_node"] autorelease];
+//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"bus_node"] autorelease];
+                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"bus_node"];
                 view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_bus.png"]];
                 view.canShowCallout = TRUE;
             }
@@ -513,7 +558,8 @@
         {
             view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"rail_node"];
             if (view == nil) {
-                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"rail_node"] autorelease];
+//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"rail_node"] autorelease];
+                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"rail_node"];
                 view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_rail.png"]];
                 view.canShowCallout = TRUE;
             }
@@ -524,7 +570,8 @@
         {
             view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"route_node"];
             if (view == nil) {
-                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"route_node"] autorelease];
+//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"route_node"] autorelease];
+                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"route_node"];
                 view.canShowCallout = TRUE;
             } else {
                 [view setNeedsDisplay];
@@ -551,7 +598,8 @@
         {
             view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"start_node"];
             if (view == nil) {
-                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"start_node"] autorelease];
+//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"start_node"] autorelease];
+                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"start_node"];
                 view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_start.png"]];
                 view.centerOffset = CGPointMake(0, -(view.frame.size.height * 0.5));
                 view.canShowCallout = TRUE;
@@ -563,7 +611,8 @@
         {
             view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"end_node"];
             if (view == nil) {
-                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"end_node"] autorelease];
+//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"end_node"] autorelease];
+                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"end_node"];
                 view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_end.png"]];
                 view.centerOffset = CGPointMake(0, -(view.frame.size.height * 0.5));
                 view.canShowCallout = TRUE;
@@ -575,7 +624,8 @@
         {
             view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"bus_node"];
             if (view == nil) {
-                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"bus_node"] autorelease];
+//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"bus_node"] autorelease];
+                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"bus_node"];
                 view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_bus.png"]];
                 view.canShowCallout = TRUE;
             }
@@ -586,7 +636,8 @@
         {
             view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"rail_node"];
             if (view == nil) {
-                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"rail_node"] autorelease];
+//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"rail_node"] autorelease];
+                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"rail_node"];
                 view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_rail.png"]];
                 view.canShowCallout = TRUE;
             }
@@ -597,7 +648,8 @@
         {
             view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"route_node"];
             if (view == nil) {
-                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"route_node"] autorelease];
+//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"route_node"] autorelease];
+                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"route_node"];
                 view.canShowCallout = TRUE;
             } else {
                 [view setNeedsDisplay];
@@ -613,7 +665,8 @@
         {
             view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"waypoint_node"];
             if (view == nil) {
-                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"waypoint_node"] autorelease];
+//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"waypoint_node"] autorelease];
+                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"waypoint_node"];
                 view.canShowCallout = TRUE;
             } else {
                 [view setNeedsDisplay];
@@ -643,7 +696,8 @@
     if ([annotation isKindOfClass:[ACPointAnnotation class]]) {
         ACPointAnnotation * newAnnotation = (ACPointAnnotation *)annotation;
         
-        BMKPinAnnotationView * newAnnotationView = [[[BMKPinAnnotationView alloc] initWithAnnotation:newAnnotation reuseIdentifier:@"AppCanAnnotation"] autorelease];
+//        BMKPinAnnotationView * newAnnotationView = [[[BMKPinAnnotationView alloc] initWithAnnotation:newAnnotation reuseIdentifier:@"AppCanAnnotation"] autorelease];
+        BMKPinAnnotationView * newAnnotationView = [[BMKPinAnnotationView alloc] initWithAnnotation:newAnnotation reuseIdentifier:@"AppCanAnnotation"];
         if (newAnnotation.iconUrl) {
             if ([newAnnotation.iconUrl hasPrefix:@"http"]) {
                 NSData * imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:newAnnotation.iconUrl]];
@@ -899,7 +953,8 @@
 //<method name="addText" />
 - (BMKOverlayView *)mapView:(BMKMapView *)mapView viewForOverlay:(id <BMKOverlay>)overlay{
     if ([overlay isKindOfClass:[BMKArcline class]]){
-        BMKArclineView * arclineView = [[[BMKArclineView alloc] initWithOverlay:overlay] autorelease];
+//        BMKArclineView * arclineView = [[[BMKArclineView alloc] initWithOverlay:overlay] autorelease];
+        BMKArclineView * arclineView = [[BMKArclineView alloc] initWithOverlay:overlay];
         NSString * colorStr=[self.overlayDataDic objectForKey:@"strokeColor"];
         arclineView.strokeColor = [MapUtility getColor:colorStr];
         arclineView.lineWidth = [[self.overlayDataDic objectForKey:@"lineWidth"] floatValue];
@@ -908,7 +963,8 @@
         return arclineView;
     }
     if ([overlay isKindOfClass:[BMKCircle class]]){
-        BMKCircleView * circleView = [[[BMKCircleView alloc] initWithOverlay:overlay] autorelease];
+//        BMKCircleView * circleView = [[[BMKCircleView alloc] initWithOverlay:overlay] autorelease];
+        BMKCircleView * circleView = [[BMKCircleView alloc] initWithOverlay:overlay];
         if (self.overlayDataDic == nil) {
             return nil;
         }
@@ -923,7 +979,8 @@
         if (self.overlayDataDic == nil) {
             return nil;
         }
-        BMKPolylineView * polylineView = [[[BMKPolylineView alloc] initWithOverlay:overlay] autorelease];
+//        BMKPolylineView * polylineView = [[[BMKPolylineView alloc] initWithOverlay:overlay] autorelease];
+        BMKPolylineView * polylineView = [[BMKPolylineView alloc] initWithOverlay:overlay];
         if ([self.overlayDataDic objectForKey:@"fillColor"]) {
             polylineView.fillColor = [MapUtility getColor:[self.overlayDataDic objectForKey:@"fillColor"]] ;
             ;
@@ -944,7 +1001,8 @@
     }
     
     if ([overlay isKindOfClass:[BMKPolygon class]]){
-        BMKPolygonView * polygonView = [[[BMKPolygonView alloc] initWithOverlay:overlay] autorelease];
+//        BMKPolygonView * polygonView = [[[BMKPolygonView alloc] initWithOverlay:overlay] autorelease];
+        BMKPolygonView * polygonView = [[BMKPolygonView alloc] initWithOverlay:overlay];
         if (self.overlayDataDic == nil) {
             return nil;
         }
@@ -957,7 +1015,8 @@
         return polygonView;
     }
     if ([overlay isKindOfClass:[BMKGroundOverlay class]]){
-        BMKGroundOverlayView * groundView = [[[BMKGroundOverlayView alloc] initWithOverlay:overlay] autorelease];
+//        BMKGroundOverlayView * groundView = [[[BMKGroundOverlayView alloc] initWithOverlay:overlay] autorelease];
+        BMKGroundOverlayView * groundView = [[BMKGroundOverlayView alloc] initWithOverlay:overlay];
         //groundView.alpha=[[self.overlayDataDic objectForKey:@"transpancecy"] floatValue];
         NSString * idStr=[self.overlayDataDic objectForKey:@"id"];
         [_overlayViewDic setObject:overlay forKey:idStr];
@@ -1279,7 +1338,7 @@
     option.pageIndex = pageIndex;
     
     BOOL flag = [_POISearch poiSearchInCity:option];
-    [option release];
+//    [option release];
     if(flag){
         NSLog(@"城市范围内搜索发送成功");
     }else{
@@ -1309,7 +1368,7 @@
     option.keyword = keyword;
     option.radius = radius;
     BOOL flag = [_POISearch poiSearchNearBy:option];
-    [option release];
+//    [option release];
     if (flag) {
         NSLog(@"周边检索发送成功");
     } else {
@@ -1348,7 +1407,7 @@
     option.keyword = keyword;
     
     BOOL flag = [_POISearch poiSearchInbounds:option];
-    [option release];
+//    [option release];
     if(flag) {
         NSLog(@"区域内搜索发送成功");
     } else {
@@ -1524,7 +1583,7 @@
     geoCodeSearchOption.city = city;
     geoCodeSearchOption.address = address;
     BOOL flag = [_geoCodeSearch geoCode:geoCodeSearchOption];
-    [geoCodeSearchOption release];
+//    [geoCodeSearchOption release];
     if(flag) {
         //
     } else {
@@ -1590,7 +1649,7 @@
     BMKReverseGeoCodeOption * reverseGeoCodeSearchOption = [[BMKReverseGeoCodeOption alloc]init];
     reverseGeoCodeSearchOption.reverseGeoPoint = pt;
     BOOL flag = [_geoCodeSearch reverseGeoCode:reverseGeoCodeSearchOption];
-    [reverseGeoCodeSearchOption release];
+//    [reverseGeoCodeSearchOption release];
     if(flag) {
         NSLog(@"反geo检索发送成功");
     } else {

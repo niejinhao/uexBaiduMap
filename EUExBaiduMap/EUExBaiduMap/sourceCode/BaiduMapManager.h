@@ -7,7 +7,6 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "BMKMapManager.h"
 
 @interface BaiduMapManager : NSObject<BMKGeneralDelegate>
 

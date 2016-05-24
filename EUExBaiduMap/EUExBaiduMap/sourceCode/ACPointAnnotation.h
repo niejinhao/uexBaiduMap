@@ -6,7 +6,7 @@
 //  Copyright (c) 2014年 com.appcan. All rights reserved.
 //
 
-#import "BMKPointAnnotation.h"
+#import <BaiduMapAPI_Map/BMKPointAnnotation.h>
 
 @interface ACPointAnnotation : BMKPointAnnotation
 

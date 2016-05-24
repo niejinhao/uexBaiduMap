@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 @class EUExBaiduMap; 
-#import "BMKMapView.h"
+#import <BaiduMapAPI_Map/BMKMapView.h>
 
 @interface BusLineObjct : NSObject
 

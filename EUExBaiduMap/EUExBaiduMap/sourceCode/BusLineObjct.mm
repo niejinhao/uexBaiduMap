@@ -7,7 +7,7 @@
 //
 
 #import "BusLineObjct.h"
-#import "BMapKIt.h"
+#import <BaiduMapAPI_Map/BMKMapView.h>
 #import "JSON.h"
 #import "MapUtility.h"
 #import "ACPointAnnotation.h"
@@ -70,7 +70,7 @@
         _POISearch.delegate = self;
     }
     BOOL flag = [_POISearch poiSearchInCity:citySearchOption];
-    [citySearchOption release];
+//    [citySearchOption release];
     if(flag)
     {
         NSLog(@"城市内检索发送成功");
@@ -116,7 +116,7 @@
             _busLineSearch.delegate = self;
         }
         BOOL flag = [_busLineSearch busLineSearch:buslineSearchOption];
-        [buslineSearchOption release];
+//        [buslineSearchOption release];
         if(flag) {
             NSLog(@"busline检索发送成功");
         } else {
@@ -168,7 +168,7 @@
          item.type = 2;
          [_mapView addAnnotation:item];
              [_annotations addObject:item];
-         [item release];
+//         [item release];
          }
          
          
