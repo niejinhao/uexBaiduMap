@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <uexplugins>
     <plugin name="uexBaiduMap">
-        
         <method name="start"></method>
         <method name="open"></method>
         <method name="close"></method>
@@ -23,44 +22,45 @@
         <method name="removeOverlay"></method>
         <method name="removeMakersOverlay"></method>
         <method name="setZoomLevel"></method>
-        <method name ="rotate"></method>
-        <method name ="overlook"></method>
-        <method name ="setZoomEnable"></method>
-        <method name ="setScrollEnable"></method>
-        <method name ="setOverlookEnable"></method>
-        <method name ="setRotateEnable"></method>
-        <method name ="zoomIn"></method>
-        <method name = "zoomOut"></method>
-        <method name = "zoomToSpan"></method>
-        <method name = "showMapScaleBar"></method>
-        <method name = "setCompassEnable"></method>
-        <method name = "setCompassPosition"></method>
-        <method name = "setMapScaleBarPosition"></method>
-        <method name = "setPoiPageCapacity"></method>
-        <method name = "poiSearchInCity"></method>
-        <method name = "poiNearbySearch"></method>
-        <method name = "poiBoundSearch"></method>
-        <method name = "busLineSearch"></method>
-        <method name = "drivingSearch"></method>
-        <method name = "walkingSearch"></method>
-        <method name = "transitSearch"></method>
-        <method name = "searchRoutePlan"></method>
-        <method name = "geocode"></method>
-        <method name = "reverseGeocode"></method>
-        <method name = "getDistance"></method>
-        <method name = "getBaiduFromGPS"></method>
-        <method name = "getBaiduFromGoogle"></method>
-        <method name = "startLocation"></method>
-        <method name = "stopLocation"></method>
-        <method name = "getCurrentLocation"></method>
-        <method name = "showUserLocation"></method>
-        <method name = "hideUserLocation"></method>
-        <method name = "setUserTrackingMode"></method>
-        <method name = "removeRoutePlan"></method>
-        <method name = "setMyLocationEnable"></method>
-        <method name = "removeBusLine"></method>
-        <method name = "hideMap"></method>
-        <method name = "showMap"></method>
+        <method name="rotate"></method>
+        <method name="overlook"></method>
+        <method name="setZoomEnable"></method>
+        <method name="setScrollEnable"></method>
+        <method name="setOverlookEnable"></method>
+        <method name="setRotateEnable"></method>
+        <method name="zoomIn"></method>
+        <method name="zoomOut"></method>
+        <method name="zoomToSpan"></method>
+        <method name="showMapScaleBar"></method>
+        <method name="setCompassEnable"></method>
+        <method name="setCompassPosition"></method>
+        <method name="setMapScaleBarPosition"></method>
+        <method name="setPoiPageCapacity"></method>
+        <method name="poiSearchInCity"></method>
+        <method name="poiNearbySearch"></method>
+        <method name="poiBoundSearch"></method>
+        <method name="busLineSearch"></method>
+        <method name="drivingSearch"></method>
+        <method name="walkingSearch"></method>
+        <method name="transitSearch"></method>
+        <method name="searchRoutePlan"></method>
+        <method name="geocode"></method>
+        <method name="reverseGeocode"></method>
+        <method name="getCenter" sync="true"></method>
+        <method name="getDistance" sync="true"></method>
+        <method name="getBaiduFromGPS"></method>
+        <method name="getBaiduFromGoogle"></method>
+        <method name="startLocation"></method>
+        <method name="stopLocation"></method>
+        <method name="getCurrentLocation"></method>
+        <method name="showUserLocation"></method>
+        <method name="hideUserLocation"></method>
+        <method name="setUserTrackingMode"></method>
+        <method name="removeRoutePlan"></method>
+        <method name="setMyLocationEnable"></method>
+        <method name="removeBusLine"></method>
+        <method name="hideMap"></method>
+        <method name="showMap"></method>
     </plugin>
 </uexplugins>
 

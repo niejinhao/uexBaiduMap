@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <uexplugins>
     <plugin
-        uexName="uexBaiduMap" version="3.1.18" build="18">
-        <info>18.升级SDK3.0.0-支持IPv6</info>
+        uexName="uexBaiduMap" version="4.0.0" build="19">
+        <info>19.4.0升级</info>
+        <build>18.升级SDK3.0.0-支持IPv6</build>
         <build>17.修复removeMakersOverlay接口传不当参数会闪退的问题</build>
         <build>16.增加对多种类型参数的识别,支持3.3引擎</build>
         <build>15.修改插件，使其支持config配置APIKey</build>

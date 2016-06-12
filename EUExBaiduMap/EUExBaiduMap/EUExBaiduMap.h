@@ -7,9 +7,19 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "EUExBase.h"
-#import "EUExBaseDefine.h"
-#import "EUtility.h"
+
+
+typedef void (^uexBaiduMapSearcherCompletionBlock)(id resultObj,NSInteger errorCode) ;
+
+
+@protocol uexBaiduMapSearcher <NSObject>
+
+- (void)searchWithCompletion:(uexBaiduMapSearcherCompletionBlock)completion;
+- (void)dispose;
+
+@end
+
+
 
 @interface EUExBaiduMap : EUExBase
 

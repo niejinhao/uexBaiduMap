@@ -8,7 +8,7 @@
 
 #import "SearchPlanObject.h"
 #import <BaiduMapAPI_Map/BMKMapView.h>
-#import "JSON.h"
+
 #import "MapUtility.h"
 #import "ACPointAnnotation.h"
 #import <CoreLocation/CoreLocation.h>
@@ -19,23 +19,24 @@
 #import <UIKit/UIKit.h>
 #import "EUExBaiduMap.h"
 
-@interface SearchPlanObject()<BMKRouteSearchDelegate,BMKMapViewDelegate>
+@interface SearchPlanObject()<BMKRouteSearchDelegate>
 
-@property (nonatomic, retain) EUExBaiduMap * uexObj;
-@property (nonatomic, retain) BMKMapView * mapView;
-@property (nonatomic, retain) NSDictionary * jsonDic;
-@property (nonatomic, retain) BMKRouteSearch * routeSearch;
-@property (nonatomic, retain) NSMutableDictionary * overlayDataDic;
-@property (nonatomic, retain) NSMutableArray * annotations;
-@property (nonatomic, retain) NSMutableArray * overlayers;
+@property (nonatomic, weak) EUExBaiduMap * uexObj;
+@property (nonatomic, weak) BMKMapView * mapView;
+@property (nonatomic, strong) NSDictionary * jsonDic;
+@property (nonatomic, strong) BMKRouteSearch * routeSearch;
+@property (nonatomic, strong) NSMutableDictionary * overlayDataDic;
+@property (nonatomic, strong) NSMutableArray * annotations;
+@property (nonatomic, strong) NSMutableArray * overlayers;
+@property (nonatomic, strong) uexBaiduMapSearcherCompletionBlock completion;
 
 @end
 
 @implementation SearchPlanObject
 
 //-(void)dealloc{
-//    if (_routeSearch) {
-//        [_routeSearch release];
+//    if (self.routeSearch) {
+//        [self.routeSearch release];
 //    }
 //    
 //    [super dealloc];
@@ -53,10 +54,24 @@
 }
 
 -(void)remove {
+    [self dispose];
     [_mapView removeAnnotations:_annotations];
     [_annotations removeAllObjects];
     [_mapView removeOverlays:_overlayers];
     [_overlayers removeAllObjects];
+}
+
+
+- (void)searchWithCompletion:(uexBaiduMapSearcherCompletionBlock)completion{
+    self.completion = completion;
+    [self doSearch];
+}
+- (void)dealloc{
+    [self dispose];
+}
+
+- (void)dispose{
+    self.routeSearch.delegate = nil;
 }
 
 -(void)doSearch {
@@ -102,13 +117,13 @@
         end.cityName=endCity;
         end.name = endName;
     }
+    BOOL flag = YES;
     switch (type) {
             
-        case 0:
-        {
-            if (!_routeSearch) {
+        case 0:{
+            if (!self.routeSearch) {
                 self.routeSearch = [[BMKRouteSearch alloc]init];
-                _routeSearch.delegate = self;
+                self.routeSearch.delegate = self;
             }
             BMKDrivingRoutePlanOption * option = [[BMKDrivingRoutePlanOption alloc]init];
             option.from = start;
@@ -129,20 +144,14 @@
                     option.drivingPolicy = BMK_DRIVING_FEE_FIRST;
                     break;
             }
-            BOOL flag = [_routeSearch drivingSearch:option];
-            if(flag) {
-                NSLog(@"drivingSearch检索发送成功");
-            } else {
-                NSLog(@"drivingSearch检索失败");
-            }
-            
-        }
+            flag = [self.routeSearch drivingSearch:option];
             break;
-        case 1:
-        {
-            if (!_routeSearch) {
+        }
+           
+        case 1:{
+            if (!self.routeSearch) {
                 self.routeSearch = [[BMKRouteSearch alloc]init];
-                _routeSearch.delegate = self;
+                self.routeSearch.delegate = self;
             }
             BMKTransitRoutePlanOption * option = [[BMKTransitRoutePlanOption alloc]init];
             option.city = start.cityName;
@@ -164,54 +173,52 @@
                     break;
             }
             
-            BOOL flag = [_routeSearch transitSearch:option];
-            if(flag) {
-                NSLog(@"transitSearch检索发送成功");
-            } else {
-                NSLog(@"transitSearch检索失败");
-            }
-            
-        }
+            flag = [self.routeSearch transitSearch:option];
             break;
-        case 2:
-        {
-            if (!_routeSearch) {
+        }
+            
+        case 2:{
+            if (!self.routeSearch) {
                 self.routeSearch = [[BMKRouteSearch alloc]init];
-                _routeSearch.delegate = self;
+                self.routeSearch.delegate = self;
             }
             BMKWalkingRoutePlanOption * option = [[BMKWalkingRoutePlanOption alloc]init];
             option.from = start;
             option.to = end;
             
-            BOOL flag = [_routeSearch walkingSearch:option];
-            if(flag) {
-                NSLog(@"walkingSearch检索发送成功");
-            } else {
-                NSLog(@"walkingSearch检索失败");
-            }
-            
-        }
+            flag = [self.routeSearch walkingSearch:option];
             break;
             
+        }
+            
+    }
+    
+    if (!flag) {
+        [self invokeCompletionBlockWithResult:nil errorCode:BMK_SEARCH_AMBIGUOUS_KEYWORD];
     }
 
 }
 
--(void)onGetDrivingRouteResult:(BMKRouteSearch *)searcher result:(BMKDrivingRouteResult *)result errorCode:(BMKSearchErrorCode)error{
-    {
-    NSString * inCallbackName = @"uexBaiduMap.onSearchRoutePlanError";
-    NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(%d);}",inCallbackName,inCallbackName,error];
-//        [self.uexObj.meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
-        [EUtility brwView:self.uexObj.meBrwView evaluateScript:jsSuccessStr];
+
+- (void)invokeCompletionBlockWithResult:(id)result errorCode:(BMKSearchErrorCode)error{
+    if(self.completion){
+        self.completion(result,error);
+        self.completion = nil;
     }
+    
+}
+
+- (void)onGetDrivingRouteResult:(BMKRouteSearch *)searcher result:(BMKDrivingRouteResult *)result errorCode:(BMKSearchErrorCode)error{
+    
+    [self invokeCompletionBlockWithResult:result errorCode:error];
     if (error == BMK_SEARCH_NO_ERROR) {
         BMKDrivingRouteLine* plan = (BMKDrivingRouteLine*)[result.routes objectAtIndex:0];
         // 计算路线方案中的路段数目
-        int size = (int)[plan.steps count];
+        NSInteger size = [plan.steps count];
         int planPointCounts = 0;
         for (int i = 0; i < size; i++) {
             BMKDrivingStep* transitStep = [plan.steps objectAtIndex:i];
-            if(i==0){
+            if(i == 0){
                 RouteAnnotation* item = [[RouteAnnotation alloc]init];
                 item.coordinate = plan.starting.location;
                 item.title = UEX_LOCALIZEDSTRING(@"起点");
@@ -285,12 +292,7 @@
 }
 
 -(void)onGetWalkingRouteResult:(BMKRouteSearch *)searcher result:(BMKWalkingRouteResult *)result errorCode:(BMKSearchErrorCode)error{
-    {
-        NSString * inCallbackName = @"uexBaiduMap.onSearchRoutePlan";
-        NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(%d);}",inCallbackName,inCallbackName,error];
-//        [self.uexObj.meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
-        [EUtility brwView:self.uexObj.meBrwView evaluateScript:jsSuccessStr];
-    }
+    [self invokeCompletionBlockWithResult:result errorCode:error];
     if (error == BMK_SEARCH_NO_ERROR) {
         BMKWalkingRouteLine* plan = (BMKWalkingRouteLine*)[result.routes objectAtIndex:0];
         int size = (int)[plan.steps count];
@@ -364,12 +366,7 @@
 
 
 -(void)onGetTransitRouteResult:(BMKRouteSearch *)searcher result:(BMKTransitRouteResult *)result errorCode:(BMKSearchErrorCode)error{
-    {
-        NSString * inCallbackName = @"uexBaiduMap.onSearchRoutePlanError";
-        NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(%d);}",inCallbackName,inCallbackName,error];
-//        [self.uexObj.meBrwView stringByEvaluatingJavaScriptFromString:jsSuccessStr];
-        [EUtility brwView:self.uexObj.meBrwView evaluateScript:jsSuccessStr];
-    }
+    [self invokeCompletionBlockWithResult:result errorCode:error];
     if (error == BMK_SEARCH_NO_ERROR) {
         BMKTransitRouteLine* plan = (BMKTransitRouteLine*)[result.routes objectAtIndex:0];
         // 计算路线方案中的路段数目
@@ -435,6 +432,7 @@
     
 }
 
+/*
 - (BMKOverlayView *)mapView:(BMKMapView *)mapView viewForOverlay:(id <BMKOverlay>)overlay{
     
     if ([overlay isKindOfClass:[BMKPolyline class]]){
@@ -569,6 +567,6 @@
 
 
 
-
+*/
 
 @end
