@@ -77,11 +77,7 @@
         _isUpdateLocationOnce = NO;
         _didBusLineSearch = NO;
         _pageCapacity = 10;
-        _overlayDataDic = [NSMutableDictionary dictionary];
-        _overlayViewDic = [NSMutableDictionary dictionary];
-        _pointAnnotationDic = [NSMutableDictionary dictionary];
-        _routePlanDic = [NSMutableDictionary dictionary];
-        _pointAnnotationViewDic = [NSMutableDictionary dictionary];
+       
         _positionOfCompass = CGPointMake(10, 10);
         _showCallOut = NO;
         _tmpFuncDict = [NSMutableDictionary dictionary];
@@ -165,6 +161,11 @@
 
 //打开地图
 -(void)open:(NSMutableArray *)inArguments{
+    _overlayDataDic = [NSMutableDictionary dictionary];
+    _overlayViewDic = [NSMutableDictionary dictionary];
+    _pointAnnotationDic = [NSMutableDictionary dictionary];
+    _routePlanDic = [NSMutableDictionary dictionary];
+    _pointAnnotationViewDic = [NSMutableDictionary dictionary];
     if (self.currentMapView) {
         return;
     }
@@ -276,12 +277,21 @@
         double lon = [[markDic objectForKey:@"longitude"] doubleValue];
         double lat = [[markDic objectForKey:@"latitude"] doubleValue];
         NSString * iconPath = [markDic objectForKey:@"icon"];
+        NSDictionary *dic = [markDic objectForKey:@"bubble"];
+        NSString *title = [dic objectForKey:@"title"];
+        NSString *imageUrl = [dic objectForKey:@"bgImage"];
         ACPointAnnotation *aPoint = [[ACPointAnnotation alloc] init];
         CLLocationCoordinate2D cc2d;
         cc2d.longitude = lon;
         cc2d.latitude = lat;
         aPoint.coordinate = cc2d;
         aPoint.pointId = idStr;
+        if (title && [title length] > 0) {
+            aPoint.title = title;
+        }
+        if (imageUrl && [imageUrl length] > 0) {
+            aPoint.imageUrl = [self absPath:imageUrl];
+        }
         if (iconPath && [iconPath length] > 0) {
             aPoint.iconUrl = [self absPath:iconPath];
         }
