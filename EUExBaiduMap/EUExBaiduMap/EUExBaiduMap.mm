@@ -62,11 +62,8 @@
         _isUpdateLocationOnce = NO;
         _didBusLineSearch = NO;
         self.pageCapacity = 10;
-        self.overlayDataDic = [NSMutableDictionary dictionary];
-        self.overlayViewDic = [NSMutableDictionary dictionary];
-        self.pointAnnotationDic = [NSMutableDictionary dictionary];
-        self.routePlanDic = [NSMutableDictionary dictionary];
-        self.pointAnnotationViewDic = [NSMutableDictionary dictionary];
+        
+        
         self.positionOfCompass = CGPointMake(10, 10);
         _showCallOut = NO;
     }
@@ -235,6 +232,11 @@
 //******************************基本功能************************************
 //打开地图
 -(void)open:(NSMutableArray *)inArguments{
+    self.pointAnnotationDic = [NSMutableDictionary dictionary];
+    self.pointAnnotationViewDic = [NSMutableDictionary dictionary];
+    self.overlayDataDic = [NSMutableDictionary dictionary];
+    self.overlayViewDic = [NSMutableDictionary dictionary];
+    self.routePlanDic = [NSMutableDictionary dictionary];
     _isFirstTime = YES;
     if ([inArguments count] < 4) {
         
@@ -374,12 +376,21 @@
         double lon = [[markDic objectForKey:@"longitude"] doubleValue];
         double lat = [[markDic objectForKey:@"latitude"] doubleValue];
         NSString * iconPath = [markDic objectForKey:@"icon"];
+        NSDictionary *dic = [markDic objectForKey:@"bubble"];
+        NSString *title = [dic objectForKey:@"title"];
+        NSString *imageUrl = [dic objectForKey:@"bgImage"];
         ACPointAnnotation *aPoint = [[ACPointAnnotation alloc] init];
         CLLocationCoordinate2D cc2d;
         cc2d.longitude = lon;
         cc2d.latitude = lat;
         aPoint.coordinate = cc2d;
         aPoint.pointId = idStr;
+        if (title && [title length] > 0) {
+           aPoint.title = title;
+        }
+        if (imageUrl && [imageUrl length] > 0) {
+            aPoint.imageUrl = [self absPath:imageUrl];
+        }
         if (iconPath && [iconPath length] > 0) {
             aPoint.iconUrl = [self absPath:iconPath];
         }
