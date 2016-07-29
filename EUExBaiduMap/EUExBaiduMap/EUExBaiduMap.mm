@@ -77,6 +77,12 @@
         _isUpdateLocationOnce = NO;
         _didBusLineSearch = NO;
         _pageCapacity = 10;
+        
+        _overlayDataDic = [NSMutableDictionary dictionary];
+        _overlayViewDic = [NSMutableDictionary dictionary];
+        _pointAnnotationDic = [NSMutableDictionary dictionary];
+        _routePlanDic = [NSMutableDictionary dictionary];
+        _pointAnnotationViewDic = [NSMutableDictionary dictionary];
        
         _positionOfCompass = CGPointMake(10, 10);
         _showCallOut = NO;
@@ -115,6 +121,10 @@
 }
 
 
+#pragma mark - Tools
+-(NSString *)randomString{
+    return [NSString stringWithFormat:@"%d",arc4random()%10000];
+}
 
 
 #pragma mark - Tools
@@ -161,11 +171,6 @@
 
 //打开地图
 -(void)open:(NSMutableArray *)inArguments{
-    _overlayDataDic = [NSMutableDictionary dictionary];
-    _overlayViewDic = [NSMutableDictionary dictionary];
-    _pointAnnotationDic = [NSMutableDictionary dictionary];
-    _routePlanDic = [NSMutableDictionary dictionary];
-    _pointAnnotationViewDic = [NSMutableDictionary dictionary];
     if (self.currentMapView) {
         return;
     }
@@ -261,19 +266,20 @@
 
 //************************覆盖物功能******************************
 
--(void)addMarkersOverlay:(NSMutableArray *)inArguments{
+-(NSArray *)addMarkersOverlay:(NSMutableArray *)inArguments{
     
     ACArgsUnpack(NSArray *markArr) = inArguments;
     if (!markArr) {
-        return;
+        return nil;
     }
     
-    
+    NSMutableArray *ids=[NSMutableArray array];
     for(id markDic in markArr){
         if (![markDic isKindOfClass:[NSDictionary class]]) {
             continue;
         }
-        NSString * idStr = [markDic objectForKey:@"id"];
+        NSString * idStr = [markDic objectForKey:@"id"]?:[self randomString];
+        [ids addObject:idStr];
         double lon = [[markDic objectForKey:@"longitude"] doubleValue];
         double lat = [[markDic objectForKey:@"latitude"] doubleValue];
         NSString * iconPath = [markDic objectForKey:@"icon"];
@@ -298,7 +304,7 @@
         [self.currentMapView addAnnotation:aPoint];
         [self.pointAnnotationDic setObject:aPoint forKey:idStr];
     }
-
+    return ids;
 }
 
 -(NSNumber *)setMarkerOverlay:(NSMutableArray *)inArguments {
@@ -660,13 +666,11 @@
 }
 
 //添加点覆盖物{"id":"d1","fillColor":"#111333","radius":20,"latitude":39.532,"longitude":116.222}
--(void)addDotOverlay:(NSMutableArray *)inArguments{
+-(NSString *)addDotOverlay:(NSMutableArray *)inArguments{
 
     ACArgsUnpack(NSDictionary* dict) = inArguments;
-    NSString * idStr = stringArg(dict[@"id"]);
-    if(!idStr){
-        return;
-    }
+    NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
+    
     if ([_overlayViewDic objectForKey:idStr]) {
         [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
         [_overlayViewDic removeObjectForKey:idStr];
@@ -682,15 +686,15 @@
     float radius = [[dict objectForKey:@"radius"] floatValue];
     BMKCircle* circle = [BMKCircle circleWithCenterCoordinate:coor radius:radius];
     [self.currentMapView addOverlay:circle];
+    
+    return idStr;
 }
 
 //添加弧线覆盖物
--(void)addArcOverlay:(NSMutableArray *)inArguments{
+-(NSString *)addArcOverlay:(NSMutableArray *)inArguments{
     ACArgsUnpack(NSDictionary* dict) = inArguments;
-    NSString * idStr = stringArg(dict[@"id"]);
-    if(!idStr){
-        return;
-    }
+    NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
+    
     if ([_overlayViewDic objectForKey:idStr]) {
         [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
         [_overlayViewDic removeObjectForKey:idStr];
@@ -709,16 +713,16 @@
     coords[2].longitude = [[dict objectForKey:@"endLongitude"] doubleValue];
     BMKArcline * arcline = [BMKArcline arclineWithCoordinates:coords];
     [self.currentMapView addOverlay:arcline];
+    
+    return idStr;
 }
 
 //添加线型覆盖物
--(void)addPolylineOverlay:(NSMutableArray *)inArguments{
+-(NSString *)addPolylineOverlay:(NSMutableArray *)inArguments{
     //    typeOverLayerView = line;
     ACArgsUnpack(NSDictionary* dict) = inArguments;
-    NSString * idStr = stringArg(dict[@"id"]);
-    if(!idStr){
-        return;
-    }
+    NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
+    
     if ([_overlayViewDic objectForKey:idStr]) {
         [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
         [_overlayViewDic removeObjectForKey:idStr];
@@ -735,15 +739,15 @@
     }
     BMKPolyline * polyline = [BMKPolyline polylineWithCoordinates:coords count:caplity];
     [self.currentMapView addOverlay:polyline];
+    
+    return idStr;
 }
 
 //添加圆型覆盖物
--(void)addCircleOverlay:(NSMutableArray *)inArguments{
+-(NSString *)addCircleOverlay:(NSMutableArray *)inArguments{
     ACArgsUnpack(NSDictionary* dict) = inArguments;
-    NSString * idStr = stringArg(dict[@"id"]);
-    if(!idStr){
-        return;
-    }
+    NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
+    
     if ([_overlayViewDic objectForKey:idStr]) {
         [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
         [_overlayViewDic removeObjectForKey:idStr];
@@ -758,15 +762,15 @@
     float radius = [[dict objectForKey:@"radius"] floatValue];
     BMKCircle * circle = [BMKCircle circleWithCenterCoordinate:coor radius:radius];
     [self.currentMapView addOverlay:circle];
+    
+    return idStr;
 }
 
 //添加多边型覆盖物
--(void)addPolygonOverlay:(NSMutableArray *)inArguments{
+-(NSString *)addPolygonOverlay:(NSMutableArray *)inArguments{
     ACArgsUnpack(NSDictionary* dict) = inArguments;
-    NSString * idStr = stringArg(dict[@"id"]);
-    if(!idStr){
-        return;
-    }
+    NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
+    
     if ([_overlayViewDic objectForKey:idStr]) {
         [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
         [_overlayViewDic removeObjectForKey:idStr];
@@ -784,15 +788,15 @@
     }
     BMKPolygon* polygon = [BMKPolygon polygonWithCoordinates:coords count:caplity];
     [self.currentMapView addOverlay:polygon];
+    
+    return idStr;
 }
 
 //添加addGroundOverLayer
--(void)addGroundOverlay:(NSMutableArray *)inArguments{
+-(NSString *)addGroundOverlay:(NSMutableArray *)inArguments{
     ACArgsUnpack(NSDictionary* dict) = inArguments;
-    NSString * idStr = stringArg(dict[@"id"]);
-    if(!idStr){
-        return;
-    }
+    NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
+    
     if ([_overlayViewDic objectForKey:idStr]) {
         [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
         [_overlayViewDic removeObjectForKey:idStr];
@@ -808,7 +812,7 @@
     }
 
     if (type != 0) {
-        return;
+        return nil;
     }
     NSDictionary * clLC1 = [propertyArr objectAtIndex:0];
     NSDictionary * clLC2 = [propertyArr objectAtIndex:1];
@@ -839,7 +843,7 @@
     BMKGroundOverlay * groundOverlay = [BMKGroundOverlay groundOverlayWithBounds:bounds icon:image];
     [self.currentMapView addOverlay:groundOverlay];
     
-    
+    return idStr;
 }
 //添加文字覆盖物
 - (void) addTextOverLay: (NSMutableArray *) inArguments {
@@ -1454,10 +1458,10 @@
 }
 
 
--(void)searchRoutePlan:(NSMutableArray *)inArguments {
+-(NSString *)searchRoutePlan:(NSMutableArray *)inArguments {
     ACArgsUnpack(NSDictionary *dict,ACJSFunctionRef *cb) = inArguments;
     
-    NSString * idStr = [dict objectForKey:@"id"];
+    NSString * idStr = [dict objectForKey:@"id"]?:[self randomString];
     SearchPlanObject * spObjTemp = [_routePlanDic objectForKey:idStr];
     if (spObjTemp) {
         [spObjTemp remove];
@@ -1478,10 +1482,11 @@
 
     [spObj searchWithCompletion:^(id resultObj, NSInteger errorCode) {
 
-        [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onSearchRoutePlan" arguments:ACArgsPack(@(errorCode))];
+        [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onSearchRoutePlan" arguments:ACArgsPack(idStr,@(errorCode))];
         [cb executeWithArguments:ACArgsPack(@(errorCode))];
         [spObj dispose];
     }];
+    return idStr;
 }
 
 
