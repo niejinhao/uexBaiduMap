@@ -677,6 +677,7 @@
     }
     
     self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
+    [self.overlayDataDic setValue:idStr forKey:@"id"];
     //    [self.overlayDataDic setDictionary:dict];
     [self.overlayDataDic setObject:@"0" forKey:@"lineWidth"];
     [self.overlayDataDic setObject:@"#000000" forKey:@"strokeColor"];
@@ -703,6 +704,7 @@
     
     self.overlayDataDic = nil;
     self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
+    [self.overlayDataDic setValue:idStr forKey:@"id"];
     //    [self.overlayDataDic setDictionary:dict];
     CLLocationCoordinate2D coords[3] = {0};
     coords[0].latitude = [[dict objectForKey:@"startLatitude"] doubleValue];
@@ -730,6 +732,7 @@
     
     self.overlayDataDic = nil;
     self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
+    [self.overlayDataDic setValue:idStr forKey:@"id"];
     NSArray * propertyArray = [dict objectForKey:@"property"];
     int caplity = (int)[propertyArray count];
     CLLocationCoordinate2D coords[999] = {0};
@@ -756,6 +759,7 @@
     
     self.overlayDataDic = nil;
     self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
+    [self.overlayDataDic setValue:idStr forKey:@"id"];
     CLLocationCoordinate2D coor;
     coor.latitude = [[dict objectForKey:@"latitude"] doubleValue];
     coor.longitude = [[dict objectForKey:@"longitude"] doubleValue];
@@ -770,7 +774,7 @@
 -(NSString *)addPolygonOverlay:(NSMutableArray *)inArguments{
     ACArgsUnpack(NSDictionary* dict) = inArguments;
     NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
-    
+    //NSLog(@"--addPolygonOverlay:%@",dict);
     if ([_overlayViewDic objectForKey:idStr]) {
         [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
         [_overlayViewDic removeObjectForKey:idStr];
@@ -778,8 +782,9 @@
     
     self.overlayDataDic = nil;
     self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
+    [self.overlayDataDic setValue:idStr forKey:@"id"];
     NSArray *propertyArray = [dict objectForKey:@"property"];
-    NSLog(@"==propertyArray==%@",propertyArray);
+    //NSLog(@"==propertyArray==%@",propertyArray);
     int caplity = (int)[propertyArray count];
     CLLocationCoordinate2D coords[100] = {0};
     for (int i = 0; i < [propertyArray count]; i  ++) {
@@ -804,6 +809,7 @@
     
     self.overlayDataDic = nil;
     self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
+    [self.overlayDataDic setValue:idStr forKey:@"id"];
     NSArray * propertyArr = [dict objectForKey:@"property"];
     NSString * imageUrl = [dict objectForKey:@"imageUrl"];
     int type = 0;
