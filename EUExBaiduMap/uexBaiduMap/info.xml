@@ -2,6 +2,6 @@
 <uexplugins>
     <plugin
         uexName="uexBaiduMap" version="4.0.0" build="0">
-        <info>0:4.0升级</info>
+        <info>0:百度地图插件 for iOS</info>
     </plugin>
 </uexplugins>
