@@ -21,6 +21,7 @@
 #import "uexBaiduPOISearcher.h"
 #import "uexBaiduGeoCodeSearcher.h"
 #import "uexBaiduReverseGeocodeSearcher.h"
+#import <AppCanKit/ACEXTScope.h>
 
 @interface EUExBaiduMap()<BMKGeneralDelegate,BMKMapViewDelegate,BMKLocationServiceDelegate,BMKGeoCodeSearchDelegate,BMKSuggestionSearchDelegate,BMKBusLineSearchDelegate,BMKRouteSearchDelegate>
 
@@ -1333,19 +1334,24 @@
 //实现PoiSearchDeleage处理回调结果
 
 - (void)cbPOISearchResult:(BMKPoiResult*)poiResult errorCode:(BMKSearchErrorCode)errorCode cbFunction:(ACJSFunctionRef *)cb{
-    
+    __block UEX_ERROR err = kUexNoError;
+    __block NSMutableDictionary * resultDic = [NSMutableDictionary dictionary];
+    @onExit{
+        [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbPoiSearchResult" arguments:ACArgsPack(resultDic.ac_JSONFragment)];
+        [cb executeWithArguments:ACArgsPack(err,resultDic)];
+    };
     if (errorCode == BMK_SEARCH_AMBIGUOUS_KEYWORD){
-        NSLog(@"起始点有歧义");
+        err = uexErrorMake(1,@"起始点有歧义");
         return;
     }
     
     if (errorCode != BMK_SEARCH_NO_ERROR) {
-        NSLog(@"抱歉，未找到结果");
+        err = uexErrorMake(errorCode,@"抱歉，未找到结果");
         return;
     }
     
     
-    NSMutableDictionary * resultDic = [NSMutableDictionary dictionary];
+    
     NSString * totalPoiNum = [NSString stringWithFormat:@"%d",poiResult.totalPoiNum];
     NSString * totalPageNum = [NSString stringWithFormat:@"%d",poiResult.pageNum];
     NSString * currentPageNum = [NSString stringWithFormat:@"%d",poiResult.currPoiNum];
@@ -1377,8 +1383,7 @@
     [resultDic setObject:currentPageNum forKey:@"currentPageNum"];
     [resultDic setObject:currentPageCapacity forKey:@"currentPageCapacity"];
     [resultDic setObject:poiInfoList forKey:@"poiInfo"];
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbPoiSearchResult" arguments:ACArgsPack(resultDic.ac_JSONFragment)];
-    [cb executeWithArguments:ACArgsPack(resultDic)];
+
     
 
 }
@@ -1411,6 +1416,9 @@
     [busLineObj searchWithCompletion:^(id result, NSInteger error) {
         [busLineObj dispose];
         BMKBusLineResult* busLineResult = (BMKBusLineResult *)result;
+        UEX_ERROR err = kUexNoError;
+        NSDictionary *dict = nil;
+        
         if (error == BMK_SEARCH_NO_ERROR) {
             NSString * busCompany = busLineResult.busCompany;
             NSString * busLineName = busLineResult.busLineName;
@@ -1429,10 +1437,13 @@
                 [busStations addObject:tempDic];
             }
             
-            NSDictionary * cbDic = [NSDictionary dictionaryWithObjectsAndKeys:busCompany,@"busCompany",busLineName,@"busLineName",uid,@"uid",startTime,@"startTime",endTime,@"endTime",isMonTicket,@"isMonTicket",busStations,@"busStations", nil];
-            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbBusLineSearchResult" arguments:ACArgsPack(cbDic.ac_JSONFragment)];
-            [cb executeWithArguments:ACArgsPack(cbDic)];
+            dict = [NSDictionary dictionaryWithObjectsAndKeys:busCompany,@"busCompany",busLineName,@"busLineName",uid,@"uid",startTime,@"startTime",endTime,@"endTime",isMonTicket,@"isMonTicket",busStations,@"busStations", nil];
+
+        }else{
+            err = uexErrorMake(error);
         }
+        [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbBusLineSearchResult" arguments:ACArgsPack(dict.ac_JSONFragment)];
+        [cb executeWithArguments:ACArgsPack(err,dict)];
     }];
     
     
@@ -1526,7 +1537,7 @@
                                    @"latitude":@(result.location.latitude)
                                    };
             [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbGeoCodeResult" arguments:ACArgsPack(dict.ac_JSONFragment)];
-            [cb executeWithArguments:ACArgsPack(dict)];
+            [cb executeWithArguments:ACArgsPack(@0,dict)];
         }
         [searcher dispose];
     }];
@@ -1564,7 +1575,7 @@
             [cb executeWithArguments:ACArgsPack(@(errorCode))];
         } else {
             [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbReverseGeoCodeResult" arguments:ACArgsPack(@{@"address":result.address}.ac_JSONFragment)];
-            [cb executeWithArguments:ACArgsPack(@{@"address":result.address})];
+            [cb executeWithArguments:ACArgsPack(@0,@{@"address":result.address})];
         }
     }];
 }
@@ -1651,7 +1662,7 @@
                                @"timeStamp":timeStr
                                };
         [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbCurrentLocation" arguments:ACArgsPack(dict.ac_JSONFragment)];
-        [cbCurrentLocation executeWithArguments:ACArgsPack(dict)];
+        [cbCurrentLocation executeWithArguments:ACArgsPack(kUexNoError,dict)];
     }
     
 }
@@ -1670,8 +1681,8 @@
 - (void)stopLocation:(NSMutableArray *)inArguments {
     self.currentMapView.showsUserLocation = NO;
     if (self.locationService) {
-        self.locationService.delegate = nil;
         [self.locationService stopUserLocationService];
+        self.locationService.delegate = nil;
     }
 }
 
@@ -1739,7 +1750,7 @@
     if (_isUpdateLocationOnce) {
         _isUpdateLocationOnce = NO;
         [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbCurrentLocation" arguments:ACArgsPack(dict.ac_JSONFragment)];
-        [self.tmpFuncDict[@"cbCurrentLocation"] executeWithArguments:ACArgsPack(dict) completionHandler:^(JSValue * _Nullable returnValue) {
+        [self.tmpFuncDict[@"cbCurrentLocation"] executeWithArguments:ACArgsPack(kUexNoError,dict) completionHandler:^(JSValue * _Nullable returnValue) {
             [self.tmpFuncDict setValue:nil forKey:@"cbCurrentLocation"];
         }];
         [self.locationService stopUserLocationService];
