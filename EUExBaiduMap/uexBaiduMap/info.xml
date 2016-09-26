@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <uexplugins>
     <plugin
-        uexName="uexBaiduMap" version="3.1.19" build="19">
-        <info>19.修复点击标注无法触发监听的bug</info>
+        uexName="uexBaiduMap" version="3.1.20" build="20">
+        <info>20.移除默认的定位权限配置</info>
+        <build>19.修复点击标注无法触发监听的bug</build>
         <build>18.升级SDK3.0.0-支持IPv6</build>
         <build>17.修复removeMakersOverlay接口传不当参数会闪退的问题</build>
         <build>16.增加对多种类型参数的识别,支持3.3引擎</build>

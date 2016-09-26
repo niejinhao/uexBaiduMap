@@ -6,8 +6,6 @@
 	<dict>
 		<key>uexBaiduMapKey</key>
 		<string>$uexBaiduMap_APIKey$</string>
-		<key>NSLocationWhenInUseUsageDescription</key>
-		<string></string>
 	</dict>
 </dict>
 </plist>
