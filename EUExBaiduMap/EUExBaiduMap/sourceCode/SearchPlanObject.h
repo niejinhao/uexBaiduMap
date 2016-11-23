@@ -7,14 +7,14 @@
 //
 
 #import <Foundation/Foundation.h>
-@class EUExBaiduMap;
+#import "EUExBaiduMap.h"
 #import <BaiduMapAPI_Map/BMKMapView.h>
 
-@interface SearchPlanObject : NSObject
+@interface SearchPlanObject : NSObject<uexBaiduMapSearcher>
 
 -(id)initWithuexObj:(EUExBaiduMap *)uexObj andMapView:(BMKMapView *)mapView andJson:(NSDictionary *)jsonDic;
 
--(void)doSearch;
+
 
 -(void)remove;
 

@@ -9,8 +9,7 @@
 #ifndef PrefixHeader_pch
 #ifdef __OBJC__
 #import <Foundation/Foundation.h>
-#import<UIKit/UIKit.h>
-#import "EUtility.h"
+#import <UIKit/UIKit.h>
 #import <BaiduMapAPI_Base/BMKBaseComponent.h>
 #import <BaiduMapAPI_Map/BMKMapComponent.h>
 #import <BaiduMapAPI_Search/BMKSearchComponent.h>
@@ -18,8 +17,9 @@
 #import <BaiduMapAPI_Location/BMKLocationComponent.h>
 #import <BaiduMapAPI_Utils/BMKUtilsComponent.h>
 #import <BaiduMapAPI_Radar/BMKRadarComponent.h>
+#import <AppCanKit/AppCanKit.h>
 
 
-#define UEX_LOCALIZEDSTRING(...) [EUtility uexPlugin:@"uexBaiduMap" localizedString:__VA_ARGS__,nil]
+#define UEX_LOCALIZEDSTRING(...) [NSString ac_plugin:@"uexBaiduMap" localizedString:__VA_ARGS__,nil]
 #endif
 #endif /* PrefixHeader_pch */
