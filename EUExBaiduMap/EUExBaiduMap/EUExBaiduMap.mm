@@ -776,7 +776,7 @@
 -(NSString *)addPolygonOverlay:(NSMutableArray *)inArguments{
     ACArgsUnpack(NSDictionary* dict) = inArguments;
     NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
-    //NSLog(@"--addPolygonOverlay:%@",dict);
+
     if ([_overlayViewDic objectForKey:idStr]) {
         [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
         [_overlayViewDic removeObjectForKey:idStr];
@@ -786,7 +786,7 @@
     self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
     [self.overlayDataDic setValue:idStr forKey:@"id"];
     NSArray *propertyArray = [dict objectForKey:@"property"];
-    //NSLog(@"==propertyArray==%@",propertyArray);
+
     int caplity = (int)[propertyArray count];
     CLLocationCoordinate2D coords[100] = {0};
     for (int i = 0; i < [propertyArray count]; i  ++) {
@@ -1015,7 +1015,7 @@
  */
 - (void)mapView:(BMKMapView *)mapView onClickedMapPoi:(BMKMapPoi*)mapPoi
 {
-    NSLog(@"onClickedMapPoi-%@",mapPoi.text);
+
     //NSString* showmeg = [NSString stringWithFormat:@"您点击了底图标注:%@,\r\n当前经度:%f,当前纬度:%f,\r\nZoomLevel=%d;RotateAngle=%d;OverlookAngle=%d", mapPoi.text,mapPoi.pt.longitude,mapPoi.pt.latitude, (int)self.currentMapView.zoomLevel,self.currentMapView.rotation,self.currentMapView.overlooking];
 //    NSDictionary * showDic = [NSDictionary dictionaryWithObjectsAndKeys:mapPoi.text,@"mapPoiText",mapPoi.pt.longitude,@"longitude",mapPoi.pt.latitude,@"latitude",(int)self.currentMapView.zoomLevel,@"zoomLevel",self.currentMapView.rotation,@"rotation",self.currentMapView.overlooking,@"overlooking", nil];
 //    NSString * onClickedMapPoiStr = [showDic JSONValue];
@@ -1616,11 +1616,11 @@
         locationCoord.longitude = [[inArguments objectAtIndex:0] doubleValue];
         locationCoord.latitude = [[inArguments objectAtIndex:1] doubleValue];
     }
-    NSLog(@"GPS坐标是:%f,%f",locationCoord.latitude,locationCoord.longitude);
+
     //BMK_COORDTYPE_GPS----->///GPS设备采集的原始GPS坐标
     NSDictionary * baidudict = BMKConvertBaiduCoorFrom(CLLocationCoordinate2DMake(locationCoord.latitude, locationCoord.longitude),BMK_COORDTYPE_GPS);
     CLLocationCoordinate2D lC2D = BMKCoorDictionaryDecode(baidudict);
-    NSLog(@"百度坐标是:%f,%f",lC2D.latitude,lC2D.longitude);
+
     [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbBaiduFromGPS" arguments:ACArgsPack(@(lC2D.latitude),@(lC2D.longitude))];
 
 }
@@ -1632,10 +1632,10 @@
         locationCoord.longitude = [[inArguments objectAtIndex:0] doubleValue];
         locationCoord.latitude = [[inArguments objectAtIndex:1] doubleValue];
     }
-    NSLog(@"google坐标是:%f,%f",locationCoord.latitude,locationCoord.longitude);
+
     NSDictionary * baidudict = BMKConvertBaiduCoorFrom(CLLocationCoordinate2DMake(locationCoord.latitude, locationCoord.longitude),BMK_COORDTYPE_COMMON);
     CLLocationCoordinate2D lC2D = BMKCoorDictionaryDecode(baidudict);
-    NSLog(@"百度坐标是:%f,%f",lC2D.latitude,lC2D.longitude);
+
 
     [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbBaiduFromGoogle" arguments:ACArgsPack(@(lC2D.latitude),@(lC2D.longitude))];
 }
@@ -1659,8 +1659,8 @@
         NSString * timeStr = [NSString stringWithFormat:@"%.0f", [timestamp timeIntervalSince1970]];
         NSDictionary *dict = @{
                                @"longitude":@(longit),
-                               @"latidude":@(lat),
-                               @"timeStamp":timeStr
+                               @"latitude":@(lat),
+                               @"timestamp":timeStr
                                };
         [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbCurrentLocation" arguments:ACArgsPack(dict.ac_JSONFragment)];
         [cbCurrentLocation executeWithArguments:ACArgsPack(kUexNoError,dict)];
@@ -1744,8 +1744,8 @@
     NSString * timeStr = [NSString stringWithFormat:@"%.0f", [timestamp timeIntervalSince1970]];
     NSDictionary *dict = @{
                            @"longitude":@(longit),
-                           @"latidude":@(lat),
-                           @"timeStamp":timeStr
+                           @"latitude":@(lat),
+                           @"timestamp":timeStr
                            };
     
     if (_isUpdateLocationOnce) {
@@ -1766,7 +1766,7 @@
  *@param error 错误号
  */
 - (void)didFailToLocateUserWithError:(NSError *)error{
-    NSLog(@"xrg-->uexBaiduMap-->didFailToLocateUserWithError");
+
 }
 
 - (void)setUserTrackingMode:(NSMutableArray *)inArguments {
