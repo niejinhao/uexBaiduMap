@@ -1575,8 +1575,15 @@
             [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbReverseGeoCodeResult" arguments:ACArgsPack(@(errorCode))];
             [cb executeWithArguments:ACArgsPack(@(errorCode))];
         } else {
-            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbReverseGeoCodeResult" arguments:ACArgsPack(@{@"address":result.address}.ac_JSONFragment)];
-            [cb executeWithArguments:ACArgsPack(@0,@{@"address":result.address})];
+            NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+            [dict setValue:result.address forKey:@"address"];
+            [dict setValue:result.addressDetail.city forKey:@"city"];
+            [dict setValue:result.addressDetail.streetName forKey:@"street"];
+            [dict setValue:result.addressDetail.streetNumber forKey:@"streetNumber"];
+            [dict setValue:result.addressDetail.province forKey:@"province"];
+            [dict setValue:result.addressDetail.district forKey:@"district"];
+            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbReverseGeoCodeResult" arguments:ACArgsPack(dict.ac_JSONFragment)];
+            [cb executeWithArguments:ACArgsPack(@0,dict)];
         }
     }];
 }
