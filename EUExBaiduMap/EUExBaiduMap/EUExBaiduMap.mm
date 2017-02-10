@@ -116,9 +116,6 @@
         [_currentMapView viewWillDisappear];
         [_currentMapView removeFromSuperview];
     }
-    if (_mapManager) {
-        [_mapManager stop];
-    }
 }
 
 
