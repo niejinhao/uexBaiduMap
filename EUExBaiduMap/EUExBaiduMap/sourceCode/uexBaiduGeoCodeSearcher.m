@@ -23,8 +23,8 @@
 
 #import "uexBaiduGeoCodeSearcher.h"
 @interface uexBaiduGeoCodeSearcher()<BMKGeoCodeSearchDelegate>
-@property (nonatomic,strong)uexBaiduMapSearcherCompletionBlock completion;
-@property (nonatomic,strong)BMKGeoCodeSearch *geoCode;
+@property ((nonatomic ,strong))uexBaiduMapSearcherCompletionBlock completion;
+@property ((nonatomic ,strong))BMKGeoCodeSearch *geoCode;
 @end
 @implementation uexBaiduGeoCodeSearcher
 

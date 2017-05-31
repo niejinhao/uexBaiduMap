@@ -37,9 +37,9 @@ typedef NS_ENUM(NSInteger,uexBaiduPOISearchMode){
 
 
 @interface uexBaiduPOISearcher : NSObject<uexBaiduMapSearcher>
-@property (nonatomic,strong)BMKPoiSearch *POI;
+@property ((nonatomic ,strong))BMKPoiSearch *POI;
 @property (nonatomic,assign)uexBaiduPOISearchMode mode;
-@property (nonatomic,strong)id searchOption;
+@property ((nonatomic ,strong))id searchOption;
 
 
 

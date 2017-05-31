@@ -25,5 +25,5 @@
 #import "EUExBaiduMap.h"
 #import <BaiduMapAPI_Search/BMKSearchComponent.h>
 @interface uexBaiduGeoCodeSearcher : NSObject<uexBaiduMapSearcher>
-@property (nonatomic,strong)BMKGeoCodeSearchOption *option;
+@property ((nonatomic ,strong))BMKGeoCodeSearchOption *option;
 @end

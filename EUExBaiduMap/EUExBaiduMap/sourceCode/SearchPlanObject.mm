@@ -1,10 +1,25 @@
-//
-//  SearchPlanObject.m
-//  EUExBaiduMap
-//
-//  Created by xurigan on 14/11/28.
-//  Copyright (c) 2014年 com.zywx. All rights reserved.
-//
+/**
+ *
+ *	@file   	: SearchPlanObject.m in EUExBaiduMap
+ *
+ *	@author 	: CeriNo
+ *
+ *	@date   	: Created on 17/5/31.
+ *
+ *	@copyright 	: 2017 The AppCan Open Source Project.
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 
 #import "SearchPlanObject.h"
 #import <BaiduMapAPI_Map/BMKMapView.h>
@@ -34,15 +49,15 @@
 
 @implementation SearchPlanObject
 
-//-(void)dealloc{
+//- (void)dealloc{
 //    if (self.routeSearch) {
-//        [self.routeSearch release];
+
 //    }
 //    
 //    [super dealloc];
 //}
 
--(id)initWithuexObj:(EUExBaiduMap *)uexObj andMapView:(BMKMapView *)mapView andJson:(NSDictionary *)jsonDic {
+- (id)initWithuexObj:(EUExBaiduMap *)uexObj andMapView:(BMKMapView *)mapView andJson:(NSDictionary *)jsonDic {
     if (self = [super init]) {
         self.uexObj = uexObj;
         self.mapView = mapView;
@@ -53,7 +68,7 @@
     return self;
 }
 
--(void)remove {
+- (void)remove {
     [self dispose];
     [_mapView removeAnnotations:_annotations];
     [_annotations removeAllObjects];
@@ -74,7 +89,7 @@
     self.routeSearch.delegate = nil;
 }
 
--(void)doSearch {
+- (void)doSearch {
     
     
     int type = [[_jsonDic objectForKey:@"type"] intValue];
@@ -225,7 +240,7 @@
                 item.type = 0;
                 [_mapView addAnnotation:item]; // 添加起点标注
                 [_annotations addObject:item];
-//                [item release];
+
                 
             }else if(i==size-1){
                 RouteAnnotation* item = [[RouteAnnotation alloc]init];
@@ -234,7 +249,7 @@
                 item.type = 1;
                 [_mapView addAnnotation:item]; // 添加终点标注
                 [_annotations addObject:item];
-//                [item release];
+
             }
             //添加annotation节点
             RouteAnnotation* item = [[RouteAnnotation alloc]init];
@@ -244,7 +259,7 @@
             item.type = 4;
             [_mapView addAnnotation:item];
             [_annotations addObject:item];
-//            [item release];
+
             //轨迹点总数累计
             planPointCounts += transitStep.pointsCount;
         }
@@ -258,7 +273,7 @@
                 item.title = tempNode.name;
                 [_mapView addAnnotation:item];
                 [_annotations addObject:item];
-//                [item release];
+
             }
         }
         //轨迹点
@@ -291,7 +306,7 @@
     
 }
 
--(void)onGetWalkingRouteResult:(BMKRouteSearch *)searcher result:(BMKWalkingRouteResult *)result errorCode:(BMKSearchErrorCode)error{
+- (void)onGetWalkingRouteResult:(BMKRouteSearch *)searcher result:(BMKWalkingRouteResult *)result errorCode:(BMKSearchErrorCode)error{
     [self invokeCompletionBlockWithResult:result errorCode:error];
     if (error == BMK_SEARCH_NO_ERROR) {
         BMKWalkingRouteLine* plan = (BMKWalkingRouteLine*)[result.routes objectAtIndex:0];
@@ -306,7 +321,7 @@
                 item.type = 0;
                 [_mapView addAnnotation:item]; // 添加起点标注
                 [_annotations addObject:item];
-//                [item release];
+
                 
             }else if(i==size-1){
                 RouteAnnotation* item = [[RouteAnnotation alloc]init];
@@ -315,7 +330,7 @@
                 item.type = 1;
                 [_mapView addAnnotation:item]; // 添加起点标注
                 [_annotations addObject:item];
-//                [item release];
+
             }
             //添加annotation节点
             RouteAnnotation* item = [[RouteAnnotation alloc]init];
@@ -325,7 +340,7 @@
             item.type = 4;
             [_mapView addAnnotation:item];
             [_annotations addObject:item];
-//            [item release];
+
             //轨迹点总数累计
             planPointCounts += transitStep.pointsCount;
         }
@@ -365,7 +380,7 @@
 
 
 
--(void)onGetTransitRouteResult:(BMKRouteSearch *)searcher result:(BMKTransitRouteResult *)result errorCode:(BMKSearchErrorCode)error{
+- (void)onGetTransitRouteResult:(BMKRouteSearch *)searcher result:(BMKTransitRouteResult *)result errorCode:(BMKSearchErrorCode)error{
     [self invokeCompletionBlockWithResult:result errorCode:error];
     if (error == BMK_SEARCH_NO_ERROR) {
         BMKTransitRouteLine* plan = (BMKTransitRouteLine*)[result.routes objectAtIndex:0];
@@ -381,7 +396,7 @@
                 item.type = 0;
                 [_mapView addAnnotation:item]; // 添加起点标注
                 [_annotations addObject:item];
-//                [item release];
+
                 
             }else if(i==size-1){
                 RouteAnnotation* item = [[RouteAnnotation alloc]init];
@@ -390,7 +405,7 @@
                 item.type = 1;
                 [_mapView addAnnotation:item]; // 添加起点标注
                 [_annotations addObject:item];
-//                [item release];
+
             }
             RouteAnnotation* item = [[RouteAnnotation alloc]init];
             item.coordinate = transitStep.entrace.location;
@@ -398,7 +413,7 @@
             item.type = 3;
             [_mapView addAnnotation:item];
             [_annotations addObject:item];
-//            [item release];
+
             
             //轨迹点总数累计
             planPointCounts += transitStep.pointsCount;
@@ -475,7 +490,7 @@
 //                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"start_node"] autorelease];
                 view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"start_node"];
                 view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_start.png"]];
-                view.centerOffset = CGPointMake(0, -(view.frame.size.height * 0.5));
+                view.centerOffset = CGPointMake(0, - (view.frame.size.height * 0.5));
                 view.canShowCallout = TRUE;
             }
             view.annotation = routeAnnotation;
@@ -488,7 +503,7 @@
 //                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"end_node"] autorelease];
                 view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"end_node"];
                 view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_end.png"]];
-                view.centerOffset = CGPointMake(0, -(view.frame.size.height * 0.5));
+                view.centerOffset = CGPointMake(0, - (view.frame.size.height * 0.5));
                 view.canShowCallout = TRUE;
             }
             view.annotation = routeAnnotation;

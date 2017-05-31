@@ -10,7 +10,7 @@
 
 @implementation ACPointAnnotation
 
-//-(void)dealloc{
+//- (void)dealloc{
 //    [super dealloc];
 //}
 

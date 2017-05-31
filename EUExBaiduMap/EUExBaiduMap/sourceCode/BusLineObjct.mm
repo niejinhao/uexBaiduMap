@@ -1,10 +1,25 @@
-//
-//  BusLineObjct.m
-//  EUExBaiduMap
-//
-//  Created by xurigan on 14/12/2.
-//  Copyright (c) 2014年 com.zywx. All rights reserved.
-//
+/**
+ *
+ *	@file   	: BusLineObjct.m in EUExBaiduMap
+ *
+ *	@author 	: CeriNo
+ *
+ *	@date   	: Created on 17/5/31.
+ *
+ *	@copyright 	: 2017 The AppCan Open Source Project.
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 
 #import "BusLineObjct.h"
 #import <BaiduMapAPI_Map/BMKMapView.h>
@@ -30,13 +45,13 @@
 @property (nonatomic, strong) NSString * searchCity;
 @property (nonatomic, strong)BMKPoiSearch * POISearch;
 @property (nonatomic, strong)BMKBusLineSearch * busLineSearch;
-@property (nonatomic,strong)uexBaiduMapSearcherCompletionBlock completion;
+@property ((nonatomic ,strong))uexBaiduMapSearcherCompletionBlock completion;
 
 @end
 
 @implementation BusLineObjct
 
--(instancetype)initWithuexObj:(EUExBaiduMap *)uexObj andMapView:(BMKMapView *)mapView andJson:(NSDictionary *)jsonDic {
+- (instancetype)initWithuexObj:(EUExBaiduMap *)uexObj andMapView:(BMKMapView *)mapView andJson:(NSDictionary *)jsonDic {
     
     if (self = [super init]) {
         self.uexObj = uexObj;
@@ -64,7 +79,7 @@
     [self dispose];
 }
 
--(void)doSearch {
+- (void)doSearch {
     self.searchCity = [_jsonDic objectForKey:@"city"];
     NSString * busLine = [_jsonDic objectForKey:@"busLineName"];
     //_didBusLineSearch = YES;
@@ -98,7 +113,7 @@
     
 }
 
--(void)remove {
+- (void)remove {
     [self dispose];
     [_mapView removeAnnotations:_annotations];
     [_annotations removeAllObjects];
@@ -106,7 +121,7 @@
     [_overlayers removeAllObjects];
 }
 
--(void)onGetPoiResult:(BMKPoiSearch *)searcher result:(BMKPoiResult *)poiResult errorCode:(BMKSearchErrorCode)errorCode {
+- (void)onGetPoiResult:(BMKPoiSearch *)searcher result:(BMKPoiResult *)poiResult errorCode:(BMKSearchErrorCode)errorCode {
     //_didBusLineSearch = NO;
     
     BMKPoiInfo * poi = nil;
@@ -168,7 +183,7 @@
             item.type = 2;
             [_mapView addAnnotation:item];
             [_annotations addObject:item];
-            //         [item release];
+            
         }
         
         
