@@ -1,10 +1,10 @@
 /**
  *
- *	@file   	: CustomPaoPaoView.h in EUExBaiduMap
+ *	@file   	: uexBaiduBusLineSearcher.h  in EUExBaiduMap
  *
  *	@author 	: CeriNo
- *
- *	@date   	: Created on 17/5/31.
+ * 
+ *	@date   	: 2017/6/1
  *
  *	@copyright 	: 2017 The AppCan Open Source Project.
  *
@@ -21,14 +21,15 @@
  *
  */
 
-#import <UIKit/UIKit.h>
 
-@interface CustomPaoPaoView : UIView
+#import <Foundation/Foundation.h>
+#import "uexBaiduMapBaseDefine.h"
 
-@property(nonatomic, retain)UIImageView * bgImageView;
-@property(nonatomic, retain)UILabel * title;
+
+@interface uexBaiduBusLineSearcher: NSObject<uexBaiduMapSearcher>
+
+@property (nonatomic, strong)NSString *city;
+@property (nonatomic, strong)NSString *busLineName;
 
 @end
-@interface UIImage(InternalMethod)
-- (UIImage*)imageRotatedByDegrees:(CGFloat)degrees;
-@end
+

@@ -22,8 +22,8 @@
  */
  
 #import <Foundation/Foundation.h>
-#import "EUExBaiduMap.h"
-#import <BaiduMapAPI_Search/BMKSearchComponent.h>
+#import "uexBaiduMapBaseDefine.h"
+
 
 typedef NS_ENUM(NSInteger,uexBaiduPOISearchMode){
     uexBaiduPOISearchModeUnknown = 0,
@@ -37,11 +37,8 @@ typedef NS_ENUM(NSInteger,uexBaiduPOISearchMode){
 
 
 @interface uexBaiduPOISearcher : NSObject<uexBaiduMapSearcher>
-@property ((nonatomic ,strong))BMKPoiSearch *POI;
-@property (nonatomic,assign)uexBaiduPOISearchMode mode;
-@property ((nonatomic ,strong))id searchOption;
-
-
+@property (nonatomic, assign)uexBaiduPOISearchMode mode;
+@property (nonatomic, strong)__kindof BMKBasePoiSearchOption *searchOption;
 
 
 @end

@@ -24,7 +24,8 @@
 #import "uexBaiduPOISearcher.h"
 
 @interface uexBaiduPOISearcher()<BMKPoiSearchDelegate>
-@property ((nonatomic ,strong))uexBaiduMapSearcherCompletionBlock completion;
+@property (nonatomic, strong)BMKPoiSearch *POI;
+@property (nonatomic, strong)uexBaiduMapSearcherCompletionBlock completion;
 @end
 
 @implementation uexBaiduPOISearcher

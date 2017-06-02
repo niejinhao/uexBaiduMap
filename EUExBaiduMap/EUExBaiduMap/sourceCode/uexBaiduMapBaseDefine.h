@@ -1,6 +1,6 @@
 /**
  *
- *	@file   	: RouteAnnotation.m in EUExBaiduMap
+ *	@file   	: uexBaiduMapBaseDefine.h in EUExBaiduMap
  *
  *	@author 	: CeriNo
  *
@@ -20,9 +20,22 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#ifndef uexBaiduMapBaseDefine_h
+#define uexBaiduMapBaseDefine_h
 
-#import "RouteAnnotation.h"
+typedef void (^uexBaiduMapSearcherCompletionBlock)(id resultObj,NSInteger errorCode) ;
 
-@implementation RouteAnnotation
+
+
+@protocol uexBaiduMapSearcher <NSObject>
+
+- (void)searchWithCompletion:(uexBaiduMapSearcherCompletionBlock)completion;
+- (void)dispose;
 
 @end
+
+FOUNDATION_STATIC_INLINE NSString* UUID(){
+    return [NSUUID UUID].UUIDString;
+}
+
+#endif /* uexBaiduMapBaseDefine_h */

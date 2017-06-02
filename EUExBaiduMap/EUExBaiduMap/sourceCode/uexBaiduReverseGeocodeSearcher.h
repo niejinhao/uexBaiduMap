@@ -22,8 +22,8 @@
  */
  
 #import <Foundation/Foundation.h>
-#import "EUExBaiduMap.h"
-#import <BaiduMapAPI_Search/BMKSearchComponent.h>
+#import "uexBaiduMapBaseDefine.h"
+
 @interface uexBaiduReverseGeocodeSearcher : NSObject<uexBaiduMapSearcher>
-@property ((nonatomic ,strong))BMKReverseGeoCodeOption *option;
+@property (nonatomic ,strong)BMKReverseGeoCodeOption *option;
 @end

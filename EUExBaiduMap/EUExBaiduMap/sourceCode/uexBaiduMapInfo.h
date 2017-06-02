@@ -1,10 +1,10 @@
 /**
  *
- *	@file   	: RouteAnnotation.h in EUExBaiduMap
+ *	@file   	: uexBaiduMapInfo.h  in EUExBaiduMap
  *
  *	@author 	: CeriNo
- *
- *	@date   	: Created on 17/5/31.
+ * 
+ *	@date   	: 2017/5/31
  *
  *	@copyright 	: 2017 The AppCan Open Source Project.
  *
@@ -21,14 +21,27 @@
  *
  */
 
-#import <BaiduMapAPI_Map/BMKPointAnnotation.h>
 
-@interface RouteAnnotation : BMKPointAnnotation
-{
-    int _type; ///<0:起点 1：终点 2：公交 3：地铁 4:驾乘 5:途经点
-    int _degree;
-}
+#import <Foundation/Foundation.h>
+#import <CoreLocation/CoreLocation.h>
 
-@property (nonatomic) int type;
-@property (nonatomic) int degree;
+
+@class EUExBaiduMap;
+@class BMKMapView;
+
+typedef void (^uexBaiduMapInfoChangeBlock)(NSDictionary *changeInfo);
+
+
+@interface uexBaiduMapInfo: NSObject
+
+@property (nonatomic, assign)CLLocationCoordinate2D center;
+@property (nonatomic, assign)CLLocationCoordinate2D northeast;
+@property (nonatomic, assign)CLLocationCoordinate2D southwest;
+@property (nonatomic, assign)float zoom;
+@property (nonatomic, assign)int overlook;
+@property (nonatomic, assign)int rotate;
+
+- (instancetype)initWithMap:(BMKMapView *)mapView onChange:(uexBaiduMapInfoChangeBlock)onChangeBlock;
+
+- (void)update:(BMKMapView *)mapView;
 @end

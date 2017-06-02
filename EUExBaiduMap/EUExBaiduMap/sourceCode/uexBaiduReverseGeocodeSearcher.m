@@ -23,8 +23,8 @@
 
 #import "uexBaiduReverseGeocodeSearcher.h"
 @interface uexBaiduReverseGeocodeSearcher()<BMKGeoCodeSearchDelegate>
-@property ((nonatomic ,strong))uexBaiduMapSearcherCompletionBlock completion;
-@property ((nonatomic ,strong))BMKGeoCodeSearch *geoCode;
+@property (nonatomic, strong)uexBaiduMapSearcherCompletionBlock completion;
+@property (nonatomic, strong)BMKGeoCodeSearch *geoCode;
 @end
 @implementation uexBaiduReverseGeocodeSearcher
 
@@ -42,7 +42,7 @@
     self.completion = completion;
     if (![self.geoCode reverseGeoCode:self.option]) {
         if (self.completion) {
-            self.completion(nil,BMK_SEARCH_AMBIGUOUS_KEYWORD);
+            self.completion(nil,BMK_SEARCH_RESULT_NOT_FOUND);
             self.completion = nil;
         }
     }

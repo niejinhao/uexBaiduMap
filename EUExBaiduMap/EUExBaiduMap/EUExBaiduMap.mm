@@ -1,93 +1,79 @@
-//
-//  EUExBaiduMap.m
-//  EUExBaiduMap
-//
-//  Created by xurigan on 14/11/3.
-//  Copyright (c) 2014年 com.zywx. All rights reserved.
-//
+/**
+ *
+ *	@file   	: EUExBaiduMap.m in EUExBaiduMap
+ *
+ *	@author 	: CeriNo
+ *
+ *	@date   	: Created on 17/5/31.
+ *
+ *	@copyright 	: 2017 The AppCan Open Source Project.
+ *
+ *  This program is free software:you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 
 #import "EUExBaiduMap.h"
-#import <BaiduMapAPI_Map/BMKMapView.h>
-
-#import "MapUtility.h"
-#import "ACPointAnnotation.h"
 #import <CoreLocation/CoreLocation.h>
-#import "BaiduMapManager.h"
-#import "CustomPaoPaoView.h"
-#import "BusLineAnnotation.h"
-#import "RouteAnnotation.h"
-#import "SearchPlanObject.h"
-#import "BusLineObjct.h"
+
 #import "uexBaiduPOISearcher.h"
 #import "uexBaiduGeoCodeSearcher.h"
 #import "uexBaiduReverseGeocodeSearcher.h"
 #import <AppCanKit/ACEXTScope.h>
+#import "uexBaiduMapOverlay.h"
+#import "uexBaiduMapInfo.h"
+#import "uexBaiduMapAnnotation.h"
+#import "uexBaiduBusLineSearcher.h"
+#import "uexBaiduMapRoutePlanSearcher.h"
 
-@interface EUExBaiduMap()<BMKGeneralDelegate,BMKMapViewDelegate,BMKLocationServiceDelegate,BMKGeoCodeSearchDelegate,BMKSuggestionSearchDelegate,BMKBusLineSearchDelegate,BMKRouteSearchDelegate>
+@interface EUExBaiduMap()<BMKGeneralDelegate,BMKMapViewDelegate, BMKLocationServiceDelegate>
 
-@property (nonatomic, strong) NSMutableDictionary * overlayDataDic;
-@property (nonatomic, strong) NSMutableDictionary * overlayViewDic;
-@property (nonatomic, strong) NSMutableDictionary * pointAnnotationDic;
-@property (nonatomic, strong) NSMutableDictionary * pointAnnotationViewDic;
-@property (nonatomic, strong) NSMutableDictionary * routePlanDic;
-
-@property (nonatomic, strong) NSMutableArray * busPoiArray;
-
-@property (nonatomic, strong) BMKMapManager * mapManager;
 @property (nonatomic, strong) BMKMapView * currentMapView;
-
 @property (nonatomic, strong) BMKLocationService * locationService;
-/*
-@property (nonatomic, strong) BMKGeoCodeSearch * geoCodeSearch;
-@property (nonatomic, strong) BMKSuggestionSearch * suggestionSearch;
-@property (nonatomic, strong) BMKBusLineSearch * busLineSearch;
-@property (nonatomic, strong) BMKRouteSearch * routeSearch;
-*/
 @property (nonatomic, assign) int pageCapacity;
-@property (nonatomic, assign) int currentIndex;
 @property (nonatomic, assign) BOOL isUpdateLocationOnce;
 @property (nonatomic, assign) BOOL didStartLocatingUser;
-@property (nonatomic, assign) BOOL showCallOut;
 @property (nonatomic, assign) BOOL didBusLineSearch;
 @property (nonatomic, assign) BOOL isFirstTime;
-
 @property (nonatomic, assign) CGPoint positionOfCompass;
-
-@property (nonatomic, strong) NSString * searchCity;
-
-@property (nonatomic,strong) NSMutableDictionary<NSString *,ACJSFunctionRef *> *tmpFuncDict;
-@property (nonatomic,strong) NSMutableArray<id<uexBaiduMapSearcher>> *searchers;
-
-
+@property (nonatomic, strong) NSMutableArray<id<uexBaiduMapSearcher>> *searchers;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, uexBaiduMapOverlay *> *overlays;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, uexBaiduMapAnnotation *> *annotations;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, uexBaiduMapRoutePlanResult *> *routePlanResults;
+@property (nonatomic, strong) uexBaiduMapInfo *mapInfo;
+@property (nonatomic, strong) ACJSFunctionRef *cbOpenFunc;
+@property (nonatomic, strong) ACJSFunctionRef *cbGetCurrentLocationFunc;
 @end
 
 
-#define UEX_FALSE @(NO)
-#define UEX_TRUE @(YES)
+static BMKMapManager *_mapManager = nil;
 
 @implementation EUExBaiduMap
 
 #pragma mark - Life Cycle
 
 
-- (instancetype)initWithWebViewEngine:(id<AppCanWebViewEngineObject>)engine
+- (instancetype)initWithWebViewEngine: (id<AppCanWebViewEngineObject>)engine
 {
-    self = [super initWithWebViewEngine:engine];
+    self = [super initWithWebViewEngine: engine];
     if (self) {
-        _didStartLocatingUser = NO;
-        _isUpdateLocationOnce = NO;
-        _didBusLineSearch = NO;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            _mapManager = [[BMKMapManager alloc] init];
+        });
         _pageCapacity = 10;
-        
-        _overlayDataDic = [NSMutableDictionary dictionary];
-        _overlayViewDic = [NSMutableDictionary dictionary];
-        _pointAnnotationDic = [NSMutableDictionary dictionary];
-        _routePlanDic = [NSMutableDictionary dictionary];
-        _pointAnnotationViewDic = [NSMutableDictionary dictionary];
-       
+        _overlays = [NSMutableDictionary dictionary];
+        _annotations = [NSMutableDictionary dictionary];
+        _routePlanResults = [NSMutableDictionary dictionary];
         _positionOfCompass = CGPointMake(10, 10);
-        _showCallOut = NO;
-        _tmpFuncDict = [NSMutableDictionary dictionary];
         _searchers = [NSMutableArray array];
     }
     return self;
@@ -101,550 +87,286 @@
     if (_locationService) {
         _locationService.delegate = nil;
     }
-    [_routePlanDic removeAllObjects];
-    [_overlayViewDic removeAllObjects];
-    [_overlayDataDic removeAllObjects];
-    [_pointAnnotationDic removeAllObjects];
-    [_pointAnnotationViewDic removeAllObjects];
-    
-    if (_busPoiArray) {
-        [_busPoiArray removeAllObjects];
-    }
-
     if (_currentMapView) {
-        [_currentMapView setDelegate:nil];
+        [_currentMapView setDelegate: nil];
         [_currentMapView viewWillDisappear];
         [_currentMapView removeFromSuperview];
+        _currentMapView = nil;
     }
 }
 
-
-#pragma mark - Tools
--(NSString *)randomString{
-    return [NSString stringWithFormat:@"%d",arc4random()%10000];
-}
-
-
-#pragma mark - Tools
-
-- (void)intResultCallbackWithKeyPath:(NSString *)keyPath isSuccess:(BOOL)isSuccess{
-    [self.webViewEngine callbackWithFunctionKeyPath:keyPath arguments:ACArgsPack(@0,@2,isSuccess ? @0 : @1)];
-}
 
 
 #pragma mark - BMKGeneralDelegate
 
-- (void)onGetNetworkState:(int)iError{
+- (void)onGetNetworkState: (int)iError{
     
     if (iError == 0) {
         return;
     }
-    NSDictionary *result = @{@"errorInfo":@(iError)};
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onSDKReceiverError" arguments:ACArgsPack(result.ac_JSONFragment)];
+    NSDictionary *result = @{@"errorInfo": @(iError)};
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onSDKReceiverError" arguments: ACArgsPack(result.ac_JSONFragment)];
 }
 
-- (void)onGetPermissionState:(int)iError{
+- (void)onGetPermissionState: (int)iError{
     if (iError == E_PERMISSIONCHECK_OK) {
-        [self intResultCallbackWithKeyPath:@"uexBaiduMap.cbStart" isSuccess:YES];
+            [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbStart" arguments: ACArgsPack(@0,@2,@0)];
         return;
     }
-    NSDictionary *result = @{@"errorInfo":@(iError)};
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onSDKReceiverError" arguments:ACArgsPack(result.ac_JSONFragment)];
+    NSDictionary *result = @{@"errorInfo": @(iError)};
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onSDKReceiverError" arguments: ACArgsPack(result.ac_JSONFragment)];
 }
 
 #pragma mark - BMKMapViewDelegate
 
-- (void)mapViewDidFinishLoading:(BMKMapView *)mapView
-{
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbOpen" arguments:nil];
-    [self.tmpFuncDict[@"cbOpen"] executeWithArguments:nil completionHandler:^(JSValue * _Nullable returnValue) {
-        [self.tmpFuncDict setValue:nil forKey:@"cbOpen"];
-    }];
-    
+- (void)mapViewDidFinishLoading: (BMKMapView *)mapView{
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbOpen" arguments: nil];
+    [self.cbOpenFunc executeWithArguments: nil];
+    self.cbOpenFunc = nil;
 }
 //******************************基本功能************************************
 
 
 
 
+
 //打开地图
--(void)open:(NSMutableArray *)inArguments{
+- (void)open: (NSMutableArray *)inArguments{
 
     if (self.currentMapView) {
         return;
     }
-
-    NSString * baiduMapKey = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"uexBaiduMapKey"];
-    self.mapManager = [BaiduMapManager defaultManager];
-
-    if(![self.mapManager start:baiduMapKey generalDelegate:self]) {
+    NSString * baiduMapKey = [[[NSBundle mainBundle] infoDictionary] objectForKey: @"uexBaiduMapKey"];
+    if(![_mapManager start: baiduMapKey generalDelegate: self]) {
         return;
     }
-    
-    ACArgsUnpack(NSNumber *xNum,NSNumber *yNum,NSNumber * wNum,NSNumber *hNum,NSNumber *lonNum,NSNumber *latNum,ACJSFunctionRef *cbOpen) = inArguments;
+    ACArgsUnpack(NSNumber *xNum,NSNumber *yNum,NSNumber * wNum,NSNumber *hNum,NSNumber *lonNum,NSNumber *latNum) = inArguments;
+    ACJSFunctionRef *callback = JSFunctionArg(inArguments.lastObject);
     //打开地图 设置中心点
-    float x = [xNum floatValue];
-    float y = [yNum floatValue];
-    float w = [wNum floatValue];
-    float h  = [hNum floatValue];
+    CGFloat x = [xNum floatValue];
+    CGFloat y = [yNum floatValue];
+    CGFloat w = [wNum floatValue];
+    CGFloat h = [hNum floatValue];
     
     _isFirstTime = YES;
-    self.currentMapView = [[BMKMapView alloc]initWithFrame:CGRectMake(x, y, w, h)];
-    [self.currentMapView setDelegate:self];
+    self.currentMapView = [[BMKMapView alloc]initWithFrame: CGRectMake(x, y, w, h)];
+    [self.currentMapView setDelegate: self];
     [self.currentMapView viewWillAppear];
-    [[self.webViewEngine webView] addSubview:self.currentMapView];
-    
+    [[self.webViewEngine webView] addSubview: self.currentMapView];
     if (lonNum && latNum) {
         double  longitude = [lonNum doubleValue];
-        double  latitude =  [latNum doubleValue];
+        double  latitude = [latNum doubleValue];
         CLLocationCoordinate2D center = CLLocationCoordinate2DMake(latitude,longitude);
-        [self.currentMapView setCenterCoordinate:center animated:NO];
+        [self.currentMapView setCenterCoordinate: center animated: NO];
     }
-    [self.tmpFuncDict setValue:cbOpen forKey:@"cbOpen"];
+    @weakify(self);
+    self.mapInfo = [[uexBaiduMapInfo alloc]initWithMap: self.currentMapView onChange: ^(NSDictionary *changeInfo) {
+        @strongify(self);
+        [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onMapStatusChangeListener" arguments: ACArgsPack(changeInfo.ac_JSONFragment)];
+    }];
+    self.cbOpenFunc = callback;
 }
 
 //***************隐藏和显示百度地图************
--(void)hideMap:(NSMutableArray *)inArguments{
-    [self.currentMapView setHidden:YES];
+- (void)hideMap: (NSMutableArray *)inArguments{
+    [self.currentMapView setHidden: YES];
 }
 
--(void)showMap:(NSMutableArray *)inArguments{
-    [self.currentMapView setHidden:NO];
+- (void)showMap: (NSMutableArray *)inArguments{
+    [self.currentMapView setHidden: NO];
 }
-
-
-
 
 //关闭地图
--(void)close:(NSMutableArray *)inArguments{
+- (void)close: (NSMutableArray *)inArguments{
     if(!self.currentMapView){
         return;
     }
-    [self.currentMapView setDelegate:nil];
+    [self.currentMapView setDelegate: nil];
     [self.currentMapView viewWillDisappear];
     [self.currentMapView removeFromSuperview];
     self.currentMapView = nil;
-
-    
 }
 
 //设置地图的类型
-//BMKMapTypeStandard   = 1,               ///< 标准地图
-//BMKMapTypeSatellite  = 4,               ///< 卫星地图
--(void)setMapType:(NSMutableArray *)inArguments{
+//BMKMapTypeStandard = 1,               ///< 标准地图
+//BMKMapTypeSatellite = 4,               ///< 卫星地图
+- (void)setMapType: (NSMutableArray *)inArguments{
     ACArgsUnpack(NSNumber *typeNum) = inArguments;
-    
     NSInteger mapType = [typeNum integerValue];
     switch (mapType) {
-        case 1:
+        case 1: 
             self.currentMapView.mapType = BMKMapTypeStandard;
             break;
-        case 2:
+        case 2: 
             self.currentMapView.mapType = BMKMapTypeSatellite;
             break;
-        default:
+        default: 
             break;
     }
 }
-//设置是否开启实时交通
--(void)setTrafficEnabled:(NSMutableArray *)inArguments{
+// 设置是否开启实时交通
+- (void)setTrafficEnabled: (NSMutableArray *)inArguments{
     ACArgsUnpack(NSNumber *num) = inArguments;
-    [self.currentMapView setTrafficEnabled:num.boolValue];
+    if (num) {
+        [self.currentMapView setTrafficEnabled: num.boolValue];
+    }
 }
-/**
- *设定地图中心点坐标
- *@param coordinate 要设定的地图中心点坐标，用经纬度表示
- *@param animated 是否采用动画效果
- */
--(void)setCenter:(NSMutableArray *)inArguments{
+
+// 设定地图中心点坐标
+- (void)setCenter: (NSMutableArray *)inArguments{
     ACArgsUnpack(NSNumber *lonNum,NSNumber *latNum,NSNumber *aniNum) = inArguments;
     CLLocationCoordinate2D center = CLLocationCoordinate2DMake(latNum.doubleValue, lonNum.doubleValue);
     BOOL animated = aniNum.boolValue;
-    [self.currentMapView setCenterCoordinate:center animated:animated];
+    [self.currentMapView setCenterCoordinate: center animated: animated];
 }
 
 //************************覆盖物功能******************************
 
--(NSArray *)addMarkersOverlay:(NSMutableArray *)inArguments{
-    
-    ACArgsUnpack(NSArray *markArr) = inArguments;
-    if (!markArr) {
-        return nil;
+- (void)addAnnotation: (uexBaiduMapAnnotation *)annotation{
+    if (!annotation || !self.currentMapView) {
+        return;
     }
+    [self.currentMapView addAnnotation: annotation];
+    [self.annotations setValue: annotation forKey: annotation.identifier];
+}
+- (void)removeAnnotationWithIdentifier: (NSString *)identifier{
+    uexBaiduMapAnnotation *annotation = self.annotations[identifier];
+    [self.currentMapView removeAnnotation: annotation];
+    [self.annotations removeObjectForKey: identifier];
+}
+- (void)removeAllAnnotations{
+    for (NSString *identifier in self.annotations.allKeys) {
+        [self removeAnnotationWithIdentifier: identifier];
+    }
+}
+
+- (void)removeAllCustomAnnotations{
+    for (uexBaiduMapAnnotation *annotation in self.annotations.allValues) {
+        if ([annotation isKindOfClass: [uexBaiduMapCustomAnnotation class]]) {
+            [self removeAnnotationWithIdentifier: annotation.identifier];
+        }
+        
+    }
+}
+
+
+- (NSArray *)addMarkersOverlay: (NSMutableArray *)inArguments{
     
-    NSMutableArray *ids=[NSMutableArray array];
-    for(id markDic in markArr){
-        if (![markDic isKindOfClass:[NSDictionary class]]) {
+    ACArgsUnpack(NSArray *infoArray) = inArguments;
+    UEX_PARAM_GUARD_NOT_NIL(infoArray, nil);
+    NSMutableArray *ids = [NSMutableArray array];
+    for (id obj in infoArray) {
+        NSDictionary *info = dictionaryArg(obj);
+        if (!info) {
             continue;
         }
-        NSString * idStr = [markDic objectForKey:@"id"]?:[self randomString];
-        [ids addObject:idStr];
-        double lon = [[markDic objectForKey:@"longitude"] doubleValue];
-        double lat = [[markDic objectForKey:@"latitude"] doubleValue];
-        NSString * iconPath = [markDic objectForKey:@"icon"];
-        NSDictionary *dic = [markDic objectForKey:@"bubble"];
-        NSString *title = [dic objectForKey:@"title"];
-        NSString *imageUrl = [dic objectForKey:@"bgImage"];
-        ACPointAnnotation *aPoint = [[ACPointAnnotation alloc] init];
-        CLLocationCoordinate2D cc2d;
-        cc2d.longitude = lon;
-        cc2d.latitude = lat;
-        aPoint.coordinate = cc2d;
-        aPoint.pointId = idStr;
-        if (title && [title length] > 0) {
-            aPoint.title = title;
+        NSString *identifier = stringArg(info[@"id"]) ?: UUID();
+        NSNumber *latNum = numberArg(info[@"latitude"]);
+        NSNumber *lonNum = numberArg(info[@"longitude"]);
+        if (!latNum || !lonNum) {
+            continue;
         }
-        if (imageUrl && [imageUrl length] > 0) {
-            aPoint.imageUrl = [self absPath:imageUrl];
+        uexBaiduMapCustomAnnotation *annotation = [[uexBaiduMapCustomAnnotation alloc]init];
+        annotation.identifier = identifier;
+        CLLocationCoordinate2D coordinate = CLLocationCoordinate2DMake(latNum.doubleValue, lonNum.doubleValue);
+        annotation.coordinate = coordinate;
+        annotation.iconPath = [self absPath: stringArg(info[@"icon"])];
+        NSDictionary *bubble = dictionaryArg(info[@"bubble"]);
+        if (bubble) {
+            annotation.bubbleTitle = stringArg(bubble[@"title"]);
+            annotation.bubbleImagePath = [self absPath: stringArg(bubble[@"bgImage"])];
         }
-        if (iconPath && [iconPath length] > 0) {
-            aPoint.iconUrl = [self absPath:iconPath];
-        }
-        [self.currentMapView addAnnotation:aPoint];
-        [self.pointAnnotationDic setObject:aPoint forKey:idStr];
+        [self addAnnotation: annotation];
+        [ids addObject: identifier];
     }
+
     return ids;
 }
 
--(NSNumber *)setMarkerOverlay:(NSMutableArray *)inArguments {
+- (UEX_BOOL)setMarkerOverlay: (NSMutableArray *)inArguments {
 
     
-    ACArgsUnpack(NSString *idStr,NSDictionary *markInfoDic) = inArguments;
-
-    
-    ACPointAnnotation * oldPointAnnotation = [self.pointAnnotationDic objectForKey:idStr];
-    NSDictionary * markInfo = dictionaryArg(markInfoDic[@"makerInfo"]);
-    
-    if (!oldPointAnnotation || !markInfo) {
-        return UEX_FALSE;
-    }
-    [self.currentMapView removeAnnotation:oldPointAnnotation];
-
-    
-    
-    CLLocationCoordinate2D cc2d = oldPointAnnotation.coordinate;
-    NSNumber *lonNum = numberArg(markInfo[@"longitude"]);
+    ACArgsUnpack(NSString *identifier,NSDictionary *info) = inArguments;
+    uexBaiduMapCustomAnnotation *annotation = (uexBaiduMapCustomAnnotation *)self.annotations[identifier];
+    UEX_PARAM_GUARD_NOT_NIL(annotation, UEX_FALSE);
+    UEX_PARAM_GUARD_NOT_NIL(info, UEX_FALSE);
+    [self removeAnnotationWithIdentifier: identifier];
+    CLLocationCoordinate2D coordinate = annotation.coordinate;
+    NSNumber *lonNum = numberArg(info[@"longitude"]);
+    NSNumber *latNum = numberArg(info[@"longitude"]);
     if (lonNum) {
-        cc2d.longitude = lonNum.doubleValue;
-        oldPointAnnotation.coordinate = cc2d;
+        coordinate.longitude = lonNum.doubleValue;
     }
-    NSNumber *latNum = numberArg(markInfo[@"latitude"]);
     if (latNum) {
-        cc2d.latitude = latNum.doubleValue;
-        oldPointAnnotation.coordinate = cc2d;
+        coordinate.latitude = latNum.doubleValue;
     }
-
-    NSString * iconPath = stringArg(markInfo[@"icon"]);
-    if (iconPath && [iconPath length] > 0) {
-        oldPointAnnotation.iconUrl = [self absPath:iconPath];
+    annotation.coordinate = coordinate;
+    NSString *iconPath = stringArg(info[@"icon"]);
+    if (iconPath) {
+        annotation.iconPath = [self absPath: iconPath];
     }
-    
-    NSDictionary * bubble = dictionaryArg(markInfo[@"bubble"]);
-    if (bubble && [[bubble allKeys]count] > 0) {
-        NSString * title= stringArg(bubble[@"title"]);
-        if (title && [title length] > 0) {
-            oldPointAnnotation.title = title;
+    NSDictionary *bubble = dictionaryArg(info[@"bubble"]);
+    if (bubble) {
+        NSString *title = stringArg(bubble[@"title"]);
+        if (title) {
+            annotation.bubbleTitle = title;
         }
-        NSString * imageUrl = stringArg(bubble[@"bgImage"]);
-        if (imageUrl && [imageUrl length] > 0) {
-            oldPointAnnotation.imageUrl = [self absPath:imageUrl];
+        NSString *imagePath = stringArg(bubble[@"bgImage"]);
+        if (imagePath) {
+            annotation.bubbleImagePath = [self absPath: imagePath];
         }
     }
-    
-    [self.currentMapView addAnnotation:oldPointAnnotation];
+    [self addAnnotation: annotation];
     return UEX_TRUE;
 }
 
--(NSNumber *)showBubble:(NSMutableArray *)inArguments {
-    ACArgsUnpack(NSString * idStr) = inArguments;
-    
-    ACPointAnnotation * pAnnotation = [self.pointAnnotationDic objectForKey:idStr];
-    if (!pAnnotation) {
+- (UEX_BOOL)showBubble: (NSMutableArray *)inArguments {
+    ACArgsUnpack(NSString * identifier) = inArguments;
+
+    if (![self.annotations.allKeys containsObject: identifier]) {
         return UEX_FALSE;
     }
-    [self.currentMapView selectAnnotation:pAnnotation animated:YES];
-    for (ACPointAnnotation * pAnnotation in [self.pointAnnotationDic allValues]) {
-        if ([pAnnotation.pointId isEqual:idStr]) {
-            [self.currentMapView selectAnnotation:pAnnotation animated:YES];
-        } else {
-            [self.currentMapView deselectAnnotation:pAnnotation animated:YES];
+    for (uexBaiduMapAnnotation *annotation in self.annotations.allValues) {
+        if ([annotation.identifier isEqual: identifier]) {
+            [self.currentMapView selectAnnotation: annotation animated: YES];
+        }else {
+            [self.currentMapView deselectAnnotation: annotation animated: YES];
         }
     }
     return UEX_TRUE;
 }
 
--(void)hideBubble:(NSMutableArray *)inArguments {
-    for (ACPointAnnotation * pAnnotation in [self.pointAnnotationDic allValues]) {
-            [self.currentMapView deselectAnnotation:pAnnotation animated:YES];
+- (void)hideBubble: (NSMutableArray *)inArguments {
+    for (uexBaiduMapAnnotation *annotation in self.annotations.allValues) {
+        [self.currentMapView deselectAnnotation: annotation animated: YES];
     }
 }
 
--(void)removeMakersOverlay:(NSMutableArray *)inArguments {
-    ACArgsUnpack(NSArray* idArray) = inArguments;
-
-    if (!idArray) {
-        return;
-    }
+- (void)removeMakersOverlay: (NSMutableArray *)inArguments {
+    ACArgsUnpack(NSArray* identifiers) = inArguments;
+    UEX_PARAM_GUARD_NOT_NIL(identifiers);
     
-    if ([idArray count] == 0) {
-        [self.currentMapView removeAnnotations:self.currentMapView.annotations];
-        [self.pointAnnotationDic removeAllObjects];
+    if (identifiers.count == 0) {
+        [self removeAllAnnotations];
         return;
     }
-    for (id aId in idArray) {
+    for (id aId in identifiers) {
         NSString * identifier = stringArg(aId);
         if (!identifier) {
             continue;
         }
-        identifier = [identifier stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"\"\""]];
-        ACPointAnnotation * pAnnotation = [self.pointAnnotationDic objectForKey:identifier];
-        [self.currentMapView removeAnnotation:pAnnotation];
-        [self.pointAnnotationDic removeObjectForKey:identifier];
+        [self removeAnnotationWithIdentifier: identifier];
     }
 }
 
-- (NSString*)getMyBundlePath1:(NSString *)filename
-{
-    NSString * path = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent: @"mapapi.bundle"];
-    NSBundle * libBundle = [NSBundle bundleWithPath: path] ;
-    if ( libBundle && filename ){
-        NSString * s=[[libBundle resourcePath ] stringByAppendingPathComponent : filename];
-        return s;
+
+
+- (BMKAnnotationView *)mapView: (BMKMapView *)mapView viewForAnnotation: (id <BMKAnnotation>)annotation {
+    if (isUexBaiduMapAnnotation(annotation)) {
+        uexBaiduMapAnnotation *uexAnnotation = (uexBaiduMapAnnotation *)annotation;
+        return [uexAnnotation annotationViewForMap: mapView];
     }
-    return nil ;
-}
 
-- (BMKAnnotationView*)getRouteAnnotationView:(BMKMapView *)mapview viewForAnnotation:(BusLineAnnotation*)routeAnnotation
-{
-    BMKAnnotationView* view = nil;
-    switch (routeAnnotation.type) {
-        case 0:
-        {
-            view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"start_node"];
-            if (!view) {
-                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"start_node"];
-                view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_start.png"]];
-                view.centerOffset = CGPointMake(0, -(view.frame.size.height * 0.5));
-                view.canShowCallout = YES;
-            }
-            view.annotation = routeAnnotation;
-        }
-            break;
-        case 1:
-        {
-            view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"end_node"];
-            if (view == nil) {
-
-                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"end_node"];
-                view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_end.png"]];
-                view.centerOffset = CGPointMake(0, -(view.frame.size.height * 0.5));
-                view.canShowCallout = TRUE;
-            }
-            view.annotation = routeAnnotation;
-        }
-            break;
-        case 2:
-        {
-            view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"bus_node"];
-            if (view == nil) {
-//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"bus_node"] autorelease];
-                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"bus_node"];
-                view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_bus.png"]];
-                view.canShowCallout = TRUE;
-            }
-            view.annotation = routeAnnotation;
-        }
-            break;
-        case 3:
-        {
-            view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"rail_node"];
-            if (view == nil) {
-//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"rail_node"] autorelease];
-                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"rail_node"];
-                view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_rail.png"]];
-                view.canShowCallout = TRUE;
-            }
-            view.annotation = routeAnnotation;
-        }
-            break;
-        case 4:
-        {
-            view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"route_node"];
-            if (view == nil) {
-//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"route_node"] autorelease];
-                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"route_node"];
-                view.canShowCallout = TRUE;
-            } else {
-                [view setNeedsDisplay];
-            }
-            
-            UIImage* image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_direction.png"]];
-            view.image = [image imageRotatedByDegrees:routeAnnotation.degree];
-            view.annotation = routeAnnotation;
-            
-        }
-            break;
-        default:
-            break;
-    }
-    
-    return view;
-}
-
-- (BMKAnnotationView*)getRouteAnnotationView1:(BMKMapView *)mapview viewForAnnotation:(RouteAnnotation*)routeAnnotation
-{
-    BMKAnnotationView* view = nil;
-    switch (routeAnnotation.type) {
-        case 0:
-        {
-            view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"start_node"];
-            if (view == nil) {
-//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"start_node"] autorelease];
-                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"start_node"];
-                view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_start.png"]];
-                view.centerOffset = CGPointMake(0, -(view.frame.size.height * 0.5));
-                view.canShowCallout = TRUE;
-            }
-            view.annotation = routeAnnotation;
-        }
-            break;
-        case 1:
-        {
-            view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"end_node"];
-            if (view == nil) {
-//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"end_node"] autorelease];
-                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"end_node"];
-                view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_end.png"]];
-                view.centerOffset = CGPointMake(0, -(view.frame.size.height * 0.5));
-                view.canShowCallout = TRUE;
-            }
-            view.annotation = routeAnnotation;
-        }
-            break;
-        case 2:
-        {
-            view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"bus_node"];
-            if (view == nil) {
-//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"bus_node"] autorelease];
-                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"bus_node"];
-                view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_bus.png"]];
-                view.canShowCallout = TRUE;
-            }
-            view.annotation = routeAnnotation;
-        }
-            break;
-        case 3:
-        {
-            view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"rail_node"];
-            if (view == nil) {
-//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"rail_node"] autorelease];
-                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"rail_node"];
-                view.image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_rail.png"]];
-                view.canShowCallout = TRUE;
-            }
-            view.annotation = routeAnnotation;
-        }
-            break;
-        case 4:
-        {
-            view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"route_node"];
-            if (view == nil) {
-//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"route_node"] autorelease];
-                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"route_node"];
-                view.canShowCallout = TRUE;
-            } else {
-                [view setNeedsDisplay];
-            }
-            
-            UIImage* image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_direction.png"]];
-            view.image = [image imageRotatedByDegrees:routeAnnotation.degree];
-            view.annotation = routeAnnotation;
-            
-        }
-            break;
-        case 5:
-        {
-            view = [mapview dequeueReusableAnnotationViewWithIdentifier:@"waypoint_node"];
-            if (view == nil) {
-//                view = [[[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"waypoint_node"] autorelease];
-                view = [[BMKAnnotationView alloc]initWithAnnotation:routeAnnotation reuseIdentifier:@"waypoint_node"];
-                view.canShowCallout = TRUE;
-            } else {
-                [view setNeedsDisplay];
-            }
-            
-            UIImage* image = [UIImage imageWithContentsOfFile:[self getMyBundlePath1:@"images/icon_nav_waypoint.png"]];
-            view.image = [image imageRotatedByDegrees:routeAnnotation.degree];
-            view.annotation = routeAnnotation;
-        }
-            break;
-        default:
-            break;
-    }
-    
-    return view;
-}
-
-
-
-- (BMKAnnotationView *)mapView:(BMKMapView *)mapView viewForAnnotation:(id <BMKAnnotation>)annotation {
-    if ([annotation isKindOfClass:[RouteAnnotation class]]) {
-        return [self getRouteAnnotationView1:mapView viewForAnnotation:(RouteAnnotation *)annotation];
-    }
-    if ([annotation isKindOfClass:[BusLineAnnotation class]]) {
-        return [self getRouteAnnotationView:mapView viewForAnnotation:(BusLineAnnotation*)annotation];
-    }
-    if ([annotation isKindOfClass:[ACPointAnnotation class]]) {
-        ACPointAnnotation * newAnnotation = (ACPointAnnotation *)annotation;
-        
-//        BMKPinAnnotationView * newAnnotationView = [[[BMKPinAnnotationView alloc] initWithAnnotation:newAnnotation reuseIdentifier:@"AppCanAnnotation"] autorelease];
-        BMKPinAnnotationView * newAnnotationView = [[BMKPinAnnotationView alloc] initWithAnnotation:newAnnotation reuseIdentifier:@"AppCanAnnotation"];
-        if (newAnnotation.iconUrl) {
-            if ([newAnnotation.iconUrl hasPrefix:@"http"]) {
-                NSData * imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:newAnnotation.iconUrl]];
-                newAnnotationView.image = [UIImage imageWithData:imageData];
-            } else {
-            newAnnotationView.image = [UIImage imageWithContentsOfFile:newAnnotation.iconUrl];
-            }
-        }else {
-            // 设置颜色
-            ((BMKPinAnnotationView*)newAnnotationView).pinColor = BMKPinAnnotationColorPurple;
-        }
-        if (newAnnotation.imageUrl) {
-            
-            UIImage * image = nil;
-            if ([newAnnotation.imageUrl hasPrefix:@"http"]) {
-                NSURL * url = [NSURL URLWithString: newAnnotation.imageUrl];
-                image = [UIImage imageWithData: [NSData dataWithContentsOfURL:url]];
-            } else {
-                image = [UIImage imageWithContentsOfFile:newAnnotation.imageUrl];
-            }
-            
-            UIImageView * imageV = [[UIImageView alloc]initWithImage:image];
-            CustomPaoPaoView * customView = [[CustomPaoPaoView alloc]initWithFrame:imageV.frame];
-            customView.backgroundColor = [UIColor redColor];
-            customView.bgImageView.image = [UIImage imageWithContentsOfFile:newAnnotation.imageUrl];
-            
-            //宽度不变，根据字的多少计算label的高度
-            CGSize size = [newAnnotation.title sizeWithFont:customView.title.font constrainedToSize:CGSizeMake(MAXFLOAT, imageV.frame.size.width) lineBreakMode:NSLineBreakByWordWrapping];
-            //根据计算结果重新设置UILabel的尺寸
-            [customView.title setFrame:CGRectMake(0, 0, size.width, size.height)];
-            customView.title.center = customView.center;
-        customView.title.text=newAnnotation.title;
-            
-            BMKActionPaopaoView * ppaoView = [[BMKActionPaopaoView alloc]initWithCustomView:customView];
-            newAnnotationView.paopaoView = ppaoView;
-            newAnnotationView.canShowCallout = YES;
-
-        }
-        
-        // 从天上掉下效果
-        ((BMKPinAnnotationView*)newAnnotationView).animatesDrop = NO;
-        // 设置可拖拽
-        ((BMKPinAnnotationView*)newAnnotationView).draggable = NO;
-        [_pointAnnotationViewDic setObject:newAnnotationView forKey:newAnnotation.pointId];
-        return newAnnotationView;
-    }
     return nil;
 }
 
@@ -653,325 +375,154 @@
  *@param mapView 地图View
  *@param views 选中的annotation views
  */
-- (void)mapView:(BMKMapView *)mapView didSelectAnnotationView:(BMKAnnotationView *)view{
-    for (NSString * pointId in [_pointAnnotationViewDic allKeys]) {
-        BMKAnnotationView * aView = [_pointAnnotationViewDic objectForKey:pointId];
-        if ([aView isEqual:view]) {
-            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onMakerClickListner" arguments:ACArgsPack(numberArg(pointId))];
-            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onMarkerClickListener" arguments:ACArgsPack(numberArg(pointId))];
-        }
+- (void)mapView: (BMKMapView *)mapView didSelectAnnotationView: (BMKAnnotationView *)view{
+    id annotation = view.annotation;
+    if (![annotation isKindOfClass: [uexBaiduMapCustomAnnotation class]]) {
+        return;
     }
-    
+    NSString *identifier = [annotation identidier];
+    if (!identifier) {
+        return;
+    }
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onMakerClickListner" arguments: ACArgsPack(identifier)];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onMarkerClickListener" arguments: ACArgsPack(identifier)];
 }
 
-//添加点覆盖物{"id":"d1","fillColor":"#111333","radius":20,"latitude":39.532,"longitude":116.222}
--(NSString *)addDotOverlay:(NSMutableArray *)inArguments{
-
-    ACArgsUnpack(NSDictionary* dict) = inArguments;
-    NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
-    
-    if ([_overlayViewDic objectForKey:idStr]) {
-        [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
-        [_overlayViewDic removeObjectForKey:idStr];
+- (void)removeAllOverlays{
+    for (NSString *identifier in self.overlays.allKeys) {
+        [self removeOverlayWithIdentifier: identifier];
     }
-    
-    self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
-    [self.overlayDataDic setValue:idStr forKey:@"id"];
-    //    [self.overlayDataDic setDictionary:dict];
-    [self.overlayDataDic setObject:@"0" forKey:@"lineWidth"];
-    [self.overlayDataDic setObject:@"#000000" forKey:@"strokeColor"];
-    CLLocationCoordinate2D coor;
-    coor.latitude = [[dict objectForKey:@"latitude"] doubleValue];
-    coor.longitude = [[dict objectForKey:@"longitude"] doubleValue];
-    float radius = [[dict objectForKey:@"radius"] floatValue];
-    BMKCircle* circle = [BMKCircle circleWithCenterCoordinate:coor radius:radius];
-    [self.currentMapView addOverlay:circle];
-    
-    return idStr;
 }
+
+- (void)removeOverlayWithIdentifier: (NSString *)identifier{
+    if (!identifier) {
+        return;
+    }
+    uexBaiduMapOverlay *overlay = self.overlays[identifier];
+    if (!overlay) {
+        return;
+    }
+    [self.currentMapView removeOverlay: overlay.bmkOverlay];
+    [self.overlays removeObjectForKey: identifier];
+}
+
+- (void)addOverlay: (uexBaiduMapOverlay *)overlay{
+    if (!overlay || !self.currentMapView) {
+        return;
+    }
+    NSString *identifier = overlay.identidier;
+    [self removeOverlayWithIdentifier: identifier];
+    self.overlays[identifier] = overlay;
+    [self.currentMapView addOverlay: overlay.bmkOverlay];
+}
+
+
+
+- (NSString *)addDotOverlay: (NSMutableArray *)inArguments{
+    ACArgsUnpack(NSDictionary* info) = inArguments;
+    uexBaiduMapDotOverlay *overlay = [[uexBaiduMapDotOverlay alloc]initWithInfoDictionary: info];
+    [self addOverlay: overlay];
+    return overlay.identidier;
+}
+
 
 //添加弧线覆盖物
--(NSString *)addArcOverlay:(NSMutableArray *)inArguments{
-    ACArgsUnpack(NSDictionary* dict) = inArguments;
-    NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
-    
-    if ([_overlayViewDic objectForKey:idStr]) {
-        [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
-        [_overlayViewDic removeObjectForKey:idStr];
-    }
-    
-    
-    self.overlayDataDic = nil;
-    self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
-    [self.overlayDataDic setValue:idStr forKey:@"id"];
-    //    [self.overlayDataDic setDictionary:dict];
-    CLLocationCoordinate2D coords[3] = {0};
-    coords[0].latitude = [[dict objectForKey:@"startLatitude"] doubleValue];
-    coords[0].longitude = [[dict objectForKey:@"startLongitude"] doubleValue];
-    coords[1].latitude = [[dict objectForKey:@"centerLatitude"] doubleValue];
-    coords[1].longitude = [[dict objectForKey:@"centerLongitude"] doubleValue];
-    coords[2].latitude = [[dict objectForKey:@"endLatitude"] doubleValue];
-    coords[2].longitude = [[dict objectForKey:@"endLongitude"] doubleValue];
-    BMKArcline * arcline = [BMKArcline arclineWithCoordinates:coords];
-    [self.currentMapView addOverlay:arcline];
-    
-    return idStr;
+- (NSString *)addArcOverlay: (NSMutableArray *)inArguments{
+    ACArgsUnpack(NSDictionary* info) = inArguments;
+    uexBaiduMapArcOverlay *overlay = [[uexBaiduMapArcOverlay alloc]initWithInfoDictionary: info];
+    [self addOverlay: overlay];
+    return overlay.identidier;
 }
 
 //添加线型覆盖物
--(NSString *)addPolylineOverlay:(NSMutableArray *)inArguments{
-    //    typeOverLayerView = line;
-    ACArgsUnpack(NSDictionary* dict) = inArguments;
-    NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
-    
-    if ([_overlayViewDic objectForKey:idStr]) {
-        [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
-        [_overlayViewDic removeObjectForKey:idStr];
-    }
-    
-    self.overlayDataDic = nil;
-    self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
-    [self.overlayDataDic setValue:idStr forKey:@"id"];
-    NSArray * propertyArray = [dict objectForKey:@"property"];
-    int caplity = (int)[propertyArray count];
-    CLLocationCoordinate2D coords[999] = {0};
-    for (int i = 0; i <[ propertyArray count]; i++) {
-        coords[i].latitude = [[[propertyArray objectAtIndex:i] objectForKey:@"latitude"] doubleValue];
-        coords[i].longitude =  [[[propertyArray objectAtIndex:i] objectForKey:@"longitude"] doubleValue];
-    }
-    BMKPolyline * polyline = [BMKPolyline polylineWithCoordinates:coords count:caplity];
-    [self.currentMapView addOverlay:polyline];
-    
-    return idStr;
+- (NSString *)addPolylineOverlay: (NSMutableArray *)inArguments{
+    ACArgsUnpack(NSDictionary* info) = inArguments;
+    uexBaiduMapPolylineOverlay *overlay = [[uexBaiduMapPolylineOverlay alloc]initWithInfoDictionary: info];
+    [self addOverlay: overlay];
+    return overlay.identidier;
 }
 
 //添加圆型覆盖物
--(NSString *)addCircleOverlay:(NSMutableArray *)inArguments{
-    ACArgsUnpack(NSDictionary* dict) = inArguments;
-    NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
-    
-    if ([_overlayViewDic objectForKey:idStr]) {
-        [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
-        [_overlayViewDic removeObjectForKey:idStr];
-    }
-    
-    
-    self.overlayDataDic = nil;
-    self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
-    [self.overlayDataDic setValue:idStr forKey:@"id"];
-    CLLocationCoordinate2D coor;
-    coor.latitude = [[dict objectForKey:@"latitude"] doubleValue];
-    coor.longitude = [[dict objectForKey:@"longitude"] doubleValue];
-    float radius = [[dict objectForKey:@"radius"] floatValue];
-    BMKCircle * circle = [BMKCircle circleWithCenterCoordinate:coor radius:radius];
-    [self.currentMapView addOverlay:circle];
-    
-    return idStr;
+- (NSString *)addCircleOverlay: (NSMutableArray *)inArguments{
+    ACArgsUnpack(NSDictionary* info) = inArguments;
+    uexBaiduMapCircleOverlay *overlay = [[uexBaiduMapCircleOverlay alloc]initWithInfoDictionary: info];
+    [self addOverlay: overlay];
+    return overlay.identidier;
 }
 
 //添加多边型覆盖物
--(NSString *)addPolygonOverlay:(NSMutableArray *)inArguments{
-    ACArgsUnpack(NSDictionary* dict) = inArguments;
-    NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
-
-    if ([_overlayViewDic objectForKey:idStr]) {
-        [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
-        [_overlayViewDic removeObjectForKey:idStr];
-    }
-    
-    self.overlayDataDic = nil;
-    self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
-    [self.overlayDataDic setValue:idStr forKey:@"id"];
-    NSArray *propertyArray = [dict objectForKey:@"property"];
-
-    int caplity = (int)[propertyArray count];
-    CLLocationCoordinate2D coords[100] = {0};
-    for (int i = 0; i < [propertyArray count]; i  ++) {
-        coords[i].latitude = [[[propertyArray objectAtIndex:i] objectForKey:@"latitude"] doubleValue];
-        coords[i].longitude = [[[propertyArray objectAtIndex:i] objectForKey:@"longitude"] doubleValue];
-    }
-    BMKPolygon* polygon = [BMKPolygon polygonWithCoordinates:coords count:caplity];
-    [self.currentMapView addOverlay:polygon];
-    
-    return idStr;
+- (NSString *)addPolygonOverlay: (NSMutableArray *)inArguments{
+    ACArgsUnpack(NSDictionary* info) = inArguments;
+    uexBaiduMapPolygonOverlay *overlay = [[uexBaiduMapPolygonOverlay alloc]initWithInfoDictionary: info];
+    [self addOverlay: overlay];
+    return overlay.identidier;
 }
 
 //添加addGroundOverLayer
--(NSString *)addGroundOverlay:(NSMutableArray *)inArguments{
-    ACArgsUnpack(NSDictionary* dict) = inArguments;
-    NSString * idStr = stringArg(dict[@"id"]) ?:[self randomString];
-    
-    if ([_overlayViewDic objectForKey:idStr]) {
-        [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
-        [_overlayViewDic removeObjectForKey:idStr];
-    }
-    
-    self.overlayDataDic = nil;
-    self.overlayDataDic = [NSMutableDictionary dictionaryWithDictionary:dict];
-    [self.overlayDataDic setValue:idStr forKey:@"id"];
-    NSArray * propertyArr = [dict objectForKey:@"property"];
-    NSString * imageUrl = [dict objectForKey:@"imageUrl"];
-    int type = 0;
-    if ([dict objectForKey:@"type"]) {
-        type = [[dict objectForKey:@"type"] intValue];
-    }
-
-    if (type != 0) {
-        return nil;
-    }
-    NSDictionary * clLC1 = [propertyArr objectAtIndex:0];
-    NSDictionary * clLC2 = [propertyArr objectAtIndex:1];
-    
-    CLLocationCoordinate2D LC_One = CLLocationCoordinate2DMake([[clLC1 objectForKey:@"latitude"] doubleValue], [[clLC1 objectForKey:@"longitude"] doubleValue]);
-    CLLocationCoordinate2D LC_Two = CLLocationCoordinate2DMake([[clLC2 objectForKey:@"latitude"] doubleValue], [[clLC2 objectForKey:@"longitude"] doubleValue]);
-    
-    double latitude1 = [[clLC1 objectForKey:@"latitude"] doubleValue];
-    double latitude2 = [[clLC2 objectForKey:@"latitude"] doubleValue];
-    BMKCoordinateBounds bounds;
-    if (latitude1 > latitude2) {
-        bounds.northEast = LC_One;
-        bounds.southWest = LC_Two;
+- (NSString *)addGroundOverlay: (NSMutableArray *)inArguments{
+    ACArgsUnpack(NSDictionary* info) = inArguments;
+    uexBaiduMapGroundOverlay *overlay = [[uexBaiduMapGroundOverlay alloc]initWithInfoDictionary: info];
+    NSString *imageURL = [self absPath: stringArg(info[@"imageUrl"])];
+    UIImage *image;
+    if ([[imageURL stringByTrimmingCharactersInSet: NSCharacterSet.whitespaceCharacterSet].lowercaseString hasPrefix: @"http"]) {
+        image = [UIImage imageWithData: [NSData dataWithContentsOfURL: [NSURL URLWithString: imageURL]]];
     } else {
-        bounds.northEast = LC_Two;
-        bounds.southWest = LC_One;
+        image = [UIImage imageWithContentsOfFile: imageURL];
     }
-    
-    imageUrl = [self absPath:imageUrl];
-    UIImage * image = nil;
-    if ([imageUrl hasPrefix:@"http"]) {
-        NSURL *url = [NSURL URLWithString: imageUrl];
-        image = [UIImage imageWithData: [NSData dataWithContentsOfURL:url]];
-    } else {
-        image = [UIImage imageWithContentsOfFile:imageUrl];
-    }
-    
-    BMKGroundOverlay * groundOverlay = [BMKGroundOverlay groundOverlayWithBounds:bounds icon:image];
-    [self.currentMapView addOverlay:groundOverlay];
-    
-    return idStr;
+    overlay.image = image;
+    [self addOverlay: overlay];
+    return overlay.identidier;
 }
+
 //添加文字覆盖物
-- (void) addTextOverLay: (NSMutableArray *) inArguments {
-    
+//iOS 不支持
+- (void)addTextOverLay: (NSMutableArray *) inArguments {
 }
 
-//<method name="addText" />
-- (BMKOverlayView *)mapView:(BMKMapView *)mapView viewForOverlay:(id <BMKOverlay>)overlay{
-    if ([overlay isKindOfClass:[BMKArcline class]]){
-
-        BMKArclineView * arclineView = [[BMKArclineView alloc] initWithOverlay:overlay];
-        NSString * colorStr=[self.overlayDataDic objectForKey:@"strokeColor"];
-        arclineView.strokeColor = [MapUtility getColor:colorStr];
-        arclineView.lineWidth = [[self.overlayDataDic objectForKey:@"lineWidth"] floatValue];
-        NSString * idStr = [self.overlayDataDic objectForKey:@"id"];
-        [_overlayViewDic setObject:overlay forKey:idStr];
-        return arclineView;
-    }
-    if ([overlay isKindOfClass:[BMKCircle class]]){
-
-        BMKCircleView * circleView = [[BMKCircleView alloc] initWithOverlay:overlay];
-        if (self.overlayDataDic == nil) {
-            return nil;
-        }
-        circleView.fillColor = [MapUtility getColor:[self.overlayDataDic objectForKey:@"fillColor"]] ;
-        circleView.strokeColor = [MapUtility getColor:[self.overlayDataDic objectForKey:@"strokeColor"]] ;
-        circleView.lineWidth = [[self.overlayDataDic objectForKey:@"lineWidth"] floatValue];
-        NSString * idStr=[self.overlayDataDic objectForKey:@"id"];
-        [_overlayViewDic setObject:overlay forKey:idStr];
-        return circleView;
-    }
-    if ([overlay isKindOfClass:[BMKPolyline class]]){
-        if (self.overlayDataDic == nil) {
-            return nil;
-        }
-
-        BMKPolylineView * polylineView = [[BMKPolylineView alloc] initWithOverlay:overlay];
-        if ([self.overlayDataDic objectForKey:@"fillColor"]) {
-            polylineView.fillColor = [MapUtility getColor:[self.overlayDataDic objectForKey:@"fillColor"]] ;
-            ;
-            polylineView.strokeColor =  [MapUtility getColor:[self.overlayDataDic objectForKey:@"fillColor"]] ;
-        } else {
-            polylineView.fillColor = [UIColor blueColor];
-            ;
-            polylineView.strokeColor =  [UIColor blueColor];
-        }
-
-        polylineView.lineWidth = [[self.overlayDataDic objectForKey:@"lineWidth"] floatValue];
-        NSString * idStr = [self.overlayDataDic objectForKey:@"id"];
-        if (idStr) {
-            [_overlayViewDic setObject:overlay forKey:idStr];
-        }
-        
-        return polylineView;
-    }
-    
-    if ([overlay isKindOfClass:[BMKPolygon class]]){
-
-        BMKPolygonView * polygonView = [[BMKPolygonView alloc] initWithOverlay:overlay];
-        if (self.overlayDataDic == nil) {
-            return nil;
-        }
-        polygonView.fillColor = [MapUtility getColor:[self.overlayDataDic objectForKey:@"fillColor"]] ;
-        ;
-        polygonView.strokeColor =  [MapUtility getColor:[self.overlayDataDic objectForKey:@"strokeColor"]] ;
-        polygonView.lineWidth = [[self.overlayDataDic objectForKey:@"lineWidth"] floatValue];
-        NSString * idStr=[self.overlayDataDic objectForKey:@"id"];
-        [_overlayViewDic setObject:overlay forKey:idStr];
-        return polygonView;
-    }
-    if ([overlay isKindOfClass:[BMKGroundOverlay class]]){
-
-        BMKGroundOverlayView * groundView = [[BMKGroundOverlayView alloc] initWithOverlay:overlay];
-        NSString * idStr=[self.overlayDataDic objectForKey:@"id"];
-        [_overlayViewDic setObject:overlay forKey:idStr];
-        return groundView;
+- (BMKOverlayView *)mapView: (BMKMapView *)mapView viewForOverlay: (id <BMKOverlay>)overlay{
+    if ([overlay isKindOfClass: [BMKShape class]]) {
+        BMKShape *shape = overlay;
+        return [uexBaiduMapOverlay overlayOfShape: shape].overlayView;
     }
     return nil;
 }
 
 
-
 //清除覆盖物
--(void)removeOverlay:(NSMutableArray *)inArguments{
-
+- (void)removeOverlay: (NSMutableArray *)inArguments{
     if (inArguments.count == 0) {
-        if (self.currentMapView) {
-            NSArray * overlaysArray = [NSArray arrayWithArray:self.currentMapView.overlays];
-            [self.currentMapView removeOverlays:overlaysArray];
-            [_overlayViewDic removeAllObjects];
-        }
+        [self removeAllOverlays];
         return;
     }
-    
-    
-    
-    for (id aID in inArguments) {
-        NSString *idStr = stringArg(aID);
-        if ([_overlayViewDic objectForKey:idStr]) {
-            [self.currentMapView removeOverlay:[_overlayViewDic objectForKey:idStr]];
-            [_overlayViewDic removeObjectForKey:idStr];
-        }
-        
+    for (id arg in inArguments) {
+            NSString *identifier = stringArg(arg);
+        [self removeOverlayWithIdentifier: identifier];
     }
-    
 }
+
 //************************地图操作******************************
 /// 地图比例尺级别，在手机上当前可使用的级别为3-19级
--(void)setZoomLevel:(NSMutableArray *)inArguments{
-    float zoomLevel = [[inArguments objectAtIndex:0] floatValue];
-    if (zoomLevel >=3 && zoomLevel <= 19) {
+- (void)setZoomLevel: (NSMutableArray *)inArguments{
+    ACArgsUnpack(NSNumber *level) = inArguments;
+    float zoomLevel = level.floatValue;
+    if (zoomLevel >= 3 && zoomLevel <= 21) {
         self.currentMapView.zoomLevel = zoomLevel;
     }
 }
 //地图旋转角度，在手机上当前可使用的范围为－180～180度
--(void)rotate:(NSMutableArray *)inArguments{
-    float rotation = [[inArguments objectAtIndex:0] floatValue];
-    self.currentMapView.rotation = rotation;
+- (void)rotate: (NSMutableArray *)inArguments{
+    ACArgsUnpack(NSNumber *degree) = inArguments;
+    if(degree){
+        self.currentMapView.rotation = degree.intValue;
+    }
+    
 }
 //地图俯视角度，在手机上当前可使用的范围为－45～0度
--(void)overlook:(NSMutableArray *)inArguments{
-    float overlooking = [[inArguments objectAtIndex:0] floatValue];
-    self.currentMapView.overlooking = overlooking;
+- (void)overlook: (NSMutableArray *)inArguments{
+    ACArgsUnpack(NSNumber *degree) = inArguments;
+    if(degree){
+        self.currentMapView.overlooking = degree.intValue;
+    }
 }
 //************************事件监听******************************
 
@@ -980,21 +531,21 @@
  *@param mapView 地图View
  *@param view 泡泡所属的annotation view
  */
-- (void)mapView:(BMKMapView *)mapView annotationViewForBubble:(BMKAnnotationView *)view {
-    for (NSString * pointId in [_pointAnnotationViewDic allKeys]) {
-        BMKAnnotationView * aView = [_pointAnnotationViewDic objectForKey:pointId];
-        if ([aView isEqual:view]) {
-            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onMakerBubbleClickListner" arguments:ACArgsPack(numberArg(pointId))];
-            [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onMarkerBubbleClickListener" arguments:ACArgsPack(numberArg(pointId))];
-        }
+- (void)mapView: (BMKMapView *)mapView annotationViewForBubble: (BMKAnnotationView *)view {
+    id annotation = view.annotation;
+    if (![annotation isKindOfClass: [uexBaiduMapCustomAnnotation class]]) {
+        return;
     }
+    NSString *identifier = [annotation identifier];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onMakerBubbleClickListner" arguments: ACArgsPack(identifier)];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onMarkerBubbleClickListener" arguments: ACArgsPack(identifier)];
 }
 /**
  *地图区域改变完成后会调用此接口
  *@param mapview 地图View
  *@param animated 是否动画
  */
-- (void)mapView:(BMKMapView *)mapView regionDidChangeAnimated:(BOOL)animated {
+- (void)mapView: (BMKMapView *)mapView regionDidChangeAnimated: (BOOL)animated {
     if (self.isFirstTime) {
         self.isFirstTime = NO;
         return;
@@ -1002,7 +553,7 @@
     double latitude = mapView.centerCoordinate.latitude;
     double longitude = mapView.centerCoordinate.longitude;
     float zoomLevel = mapView.zoomLevel;
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onZoomLevelChangeListener" arguments:ACArgsPack(@(zoomLevel),@(latitude),@(longitude))];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onZoomLevelChangeListener" arguments: ACArgsPack(@(zoomLevel),@(latitude),@(longitude))];
 
 }
 /**
@@ -1010,16 +561,8 @@
  *@param mapview 地图View
  *@param mapPoi 标注点信息
  */
-- (void)mapView:(BMKMapView *)mapView onClickedMapPoi:(BMKMapPoi*)mapPoi
-{
+- (void)mapView: (BMKMapView *)mapView onClickedMapPoi: (BMKMapPoi*)mapPoi{
 
-    //NSString* showmeg = [NSString stringWithFormat:@"您点击了底图标注:%@,\r\n当前经度:%f,当前纬度:%f,\r\nZoomLevel=%d;RotateAngle=%d;OverlookAngle=%d", mapPoi.text,mapPoi.pt.longitude,mapPoi.pt.latitude, (int)self.currentMapView.zoomLevel,self.currentMapView.rotation,self.currentMapView.overlooking];
-//    NSDictionary * showDic = [NSDictionary dictionaryWithObjectsAndKeys:mapPoi.text,@"mapPoiText",mapPoi.pt.longitude,@"longitude",mapPoi.pt.latitude,@"latitude",(int)self.currentMapView.zoomLevel,@"zoomLevel",self.currentMapView.rotation,@"rotation",self.currentMapView.overlooking,@"overlooking", nil];
-//    NSString * onClickedMapPoiStr = [showDic JSONValue];
-//    NSString * inCallbackName = @"uexBaiduMap.onMakerClickListner";
-//    NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",inCallbackName,inCallbackName,onClickedMapPoiStr];
-//    [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
-//    [showDic release];
 }
 
 
@@ -1028,13 +571,12 @@
  *@param mapview 地图View
  *@param coordinate 空白处坐标点的经纬度
  */
-- (void)mapView:(BMKMapView *)mapView onClickedMapBlank:(CLLocationCoordinate2D)coordinate {
-    
+- (void)mapView: (BMKMapView *)mapView onClickedMapBlank: (CLLocationCoordinate2D)coordinate {
     NSDictionary *result = @{
-                             @"longitude":@(coordinate.longitude),
-                             @"latitude":@(coordinate.latitude)
+                             @"longitude": @(coordinate.longitude),
+                             @"latitude": @(coordinate.latitude)
                              };
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onMapClickListener" arguments:ACArgsPack(result.ac_JSONFragment)];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onMapClickListener" arguments: ACArgsPack(result.ac_JSONFragment)];
 }
 
 /**
@@ -1042,13 +584,13 @@
  *@param mapview 地图View
  *@param coordinate 返回双击处坐标点的经纬度
  */
-- (void)mapview:(BMKMapView *)mapView onDoubleClick:(CLLocationCoordinate2D)coordinate{
+- (void)mapview: (BMKMapView *)mapView onDoubleClick: (CLLocationCoordinate2D)coordinate{
     
     NSDictionary *result = @{
-                             @"longitude":@(coordinate.longitude),
-                             @"latitude":@(coordinate.latitude)
+                             @"longitude": @(coordinate.longitude),
+                             @"latitude": @(coordinate.latitude)
                              };
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onMapDoubleClickListener" arguments:ACArgsPack(result.ac_JSONFragment)];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onMapDoubleClickListener" arguments: ACArgsPack(result.ac_JSONFragment)];
 }
 
 /**
@@ -1056,99 +598,87 @@
  *@param mapview 地图View
  *@param coordinate 返回长按事件坐标点的经纬度
  */
-- (void)mapview:(BMKMapView *)mapView onLongClick:(CLLocationCoordinate2D)coordinate{
+- (void)mapview: (BMKMapView *)mapView onLongClick: (CLLocationCoordinate2D)coordinate{
     
     
     NSDictionary *result = @{
-                             @"longitude":@(coordinate.longitude),
-                             @"latitude":@(coordinate.latitude)
+                             @"longitude": @(coordinate.longitude),
+                             @"latitude": @(coordinate.latitude)
                              };
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onMapLongClickListener" arguments:ACArgsPack(result.ac_JSONFragment)];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onMapLongClickListener" arguments: ACArgsPack(result.ac_JSONFragment)];
 }
 //增加地图手势监听(返回值包括缩放等级和中心点坐标)
 //onMapStatusChange
 
 
-//地图区域发生变化的监听函数
-//- (void)mapView:(BMKMapView *)mapView regionDidChangeAnimated:(BOOL)animated
-//{
-//    NSString* showmeg = [NSString stringWithFormat:@"地图区域发生了变化(x=%d,y=%d,\r\nwidth=%d,height=%d).\r\nZoomLevel=%d;RotateAngle=%d;OverlookAngle=%d",(int)self.currentMapView.visibleMapRect.origin.x,(int)self.currentMapView.visibleMapRect.origin.y,(int)self.currentMapView.visibleMapRect.size.width,(int)self.currentMapView.visibleMapRect.size.height,(int)self.currentMapView.zoomLevel,self.currentMapView.rotation,self.currentMapView.overlooking];
-//    NSString * zoomLevel = [NSString stringWithFormat:@"%d",(int)self.currentMapView.zoomLevel];
-//    NSDictionary * showDic = [NSDictionary dictionaryWithObjectsAndKeys:zoomLevel,@"zoomLevel",self.currentMapView.rotation,@"rotation",self.currentMapView.overlooking,@"overlooking",(int)self.currentMapView.visibleMapRect.origin.x,@"x",(int)self.currentMapView.visibleMapRect.origin.y,@"y",(int)self.currentMapView.visibleMapRect.size.width,@"width",(int)self.currentMapView.visibleMapRect.size.height,@"height", nil];
-//    NSString * onRegionDidChange = [showDic JSONValue];
-//    NSString * inCallbackName = @"uexBaiduMap.onRegionDidChange";
-//    NSString *jsSuccessStr = [NSString stringWithFormat:@"if(%@!=null){%@(\'%@\');}",inCallbackName,inCallbackName,onRegionDidChange];
-//    [EUtility brwView:self.meBrwView evaluateScript:jsSuccessStr];
-//    [showDic release];
-//}
 //************************UI控制******************************
 ///设定地图View能否支持用户多点缩放(双指)
--(void)setZoomEnable:(NSMutableArray *)inArguments{
+- (void)setZoomEnable: (NSMutableArray *)inArguments{
     ACArgsUnpack(NSNumber *enableNum) = inArguments;
     if (!enableNum) {
         return;
     }
     BOOL enable = [enableNum boolValue];
-    [self.currentMapView setZoomEnabled:enable];
+    [self.currentMapView setZoomEnabled: enable];
 }
 
 ///设定地图View能否支持用户缩放(双击或双指单击)
--(void)setZoomEnabledWithTap:(NSMutableArray *)inArguments{
+- (void)setZoomEnabledWithTap: (NSMutableArray *)inArguments{
     ACArgsUnpack(NSNumber *enableNum) = inArguments;
     if (!enableNum) {
         return;
     }
     BOOL enable = [enableNum boolValue];
-    [self.currentMapView setZoomEnabledWithTap:enable];
+    [self.currentMapView setZoomEnabledWithTap: enable];
 
 }
 
 ///设定地图View能否支持用户移动地图
--(void)setScrollEnable:(NSMutableArray *)inArguments{
+- (void)setScrollEnable: (NSMutableArray *)inArguments{
     ACArgsUnpack(NSNumber *enableNum) = inArguments;
     if (!enableNum) {
         return;
     }
     BOOL enable = [enableNum boolValue];
-    [self.currentMapView setScrollEnabled:enable];
+    [self.currentMapView setScrollEnabled: enable];
     
 }
 ///设定地图View能否支持俯仰角
--(void)setOverlookEnable:(NSMutableArray *)inArguments{
+- (void)setOverlookEnable: (NSMutableArray *)inArguments{
     ACArgsUnpack(NSNumber *enableNum) = inArguments;
     if (!enableNum) {
         return;
     }
     BOOL enable = [enableNum boolValue];
-    [self.currentMapView setOverlookEnabled:enable];
+    [self.currentMapView setOverlookEnabled: enable];
 
 }
 ///设定地图View能否支持旋转
--(void)setRotateEnable:(NSMutableArray *)inArguments{
+- (void)setRotateEnable: (NSMutableArray *)inArguments{
     ACArgsUnpack(NSNumber *enableNum) = inArguments;
     if (!enableNum) {
         return;
     }
     BOOL enable = [enableNum boolValue];
-    [self.currentMapView setRotateEnabled:enable];
+    [self.currentMapView setRotateEnabled: enable];
     
 
 }
 //放大地图
--(void)zoomIn:(NSMutableArray *)inArguments{
+- (void)zoomIn: (NSMutableArray *)inArguments{
     if (self.currentMapView) {
         [self.currentMapView zoomIn];
     }
 }
 
 //缩小地图
--(void)zoomOut:(NSMutableArray *)inArguments{
+- (void)zoomOut: (NSMutableArray *)inArguments{
     if (self.currentMapView) {
         [self.currentMapView zoomOut];
     }
 }
 
--(void)zoomToSpan:(NSMutableArray *)inArguments{
+- (void)zoomToSpan: (NSMutableArray *)inArguments{
 
     ACArgsUnpack(NSNumber *lonNum,NSNumber *latNum) = inArguments;
     if (!latNum || !lonNum) {
@@ -1158,23 +688,18 @@
     region.center = self.currentMapView.centerCoordinate;
     region.span.longitudeDelta = [lonNum doubleValue];
     region.span.latitudeDelta = [latNum doubleValue];
-    [self.currentMapView setRegion:region animated:YES];
+    [self.currentMapView setRegion: region animated: YES];
 }
 
 //将地图缩放到指定的矩形区域
--(void)zoomToBounds:(NSMutableArray *)inArguments{
+- (void)zoomToBounds: (NSMutableArray *)inArguments{
     //
 }
--(void)setCompassEnable:(NSMutableArray *)inArguments{
-    
+- (void)setCompassEnable: (NSMutableArray *)inArguments{
     BOOL isOpen = [inArguments.firstObject boolValue];
-    
     if (isOpen) {
-        
-        [self.currentMapView setCompassPosition:self.positionOfCompass];
-        
+        self.currentMapView.compassPosition = self.positionOfCompass;
     } else {
-        
         self.positionOfCompass = self.currentMapView.compassPosition;
         self.currentMapView.compassPosition = CGPointMake(-50, -50);
         
@@ -1184,17 +709,17 @@
 
 
 /// 指南针的位置，设定坐标以BMKMapView左上角为原点，向右向下增长
--(void)setCompassPosition:(NSMutableArray *) inArguments{
+- (void)setCompassPosition: (NSMutableArray *) inArguments{
     ACArgsUnpack(NSNumber *xNum,NSNumber *yNum) = inArguments;
     if (!xNum || !yNum) {
         return;
     }
-    float x = [xNum floatValue];
-    float y = [yNum floatValue];
-    [self.currentMapView setCompassPosition:CGPointMake(x, y)];
+    CGFloat x = [xNum floatValue];
+    CGFloat y = [yNum floatValue];
+    self.currentMapView.compassPosition = CGPointMake(x, y);
 }
 /// 设定是否显式比例尺
--(void)showMapScaleBar:(NSMutableArray *)inArguments{
+- (void)showMapScaleBar: (NSMutableArray *)inArguments{
     
     ACArgsUnpack(NSNumber *enableNum) = inArguments;
     if (!enableNum) {
@@ -1202,33 +727,33 @@
     }
     BOOL enable = [enableNum boolValue];
     
-    [self.currentMapView setShowMapScaleBar:enable];
+    [self.currentMapView setShowMapScaleBar: enable];
 }
--(void)setMapScaleBarPosition:(NSMutableArray *)inArguments{
+- (void)setMapScaleBarPosition: (NSMutableArray *)inArguments{
     ACArgsUnpack(NSNumber *xNum,NSNumber *yNum) = inArguments;
     if (!xNum || !yNum) {
         return;
     }
     float x = [xNum floatValue];
     float y = [yNum floatValue];
-    [self.currentMapView setMapScaleBarPosition:CGPointMake(x, y)];
+    [self.currentMapView setMapScaleBarPosition: CGPointMake(x, y)];
 }
 //************POI**************************
 
 //setPoiPageCapacity设置搜索POI单页数据量
--(void)setPoiPageCapacity:(NSMutableArray *)inArguments{
+- (void)setPoiPageCapacity: (NSMutableArray *)inArguments{
     int pageCapacity = [inArguments.firstObject intValue];
     self.pageCapacity = pageCapacity;
 }
 
--(NSNumber *)getPoiPageCapacity:(NSMutableArray *)inArguments{
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbGetPoiPageCapacity" arguments:ACArgsPack(@0,@2,@(self.pageCapacity))];
+- (NSNumber *)getPoiPageCapacity: (NSMutableArray *)inArguments{
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbGetPoiPageCapacity" arguments: ACArgsPack(@0,@2,@(self.pageCapacity))];
     return @(self.pageCapacity);
 
 }
 
 //poiSearchInCity 城市范围内搜索
--(void)poiSearchInCity:(NSMutableArray *)inArguments{
+- (void)poiSearchInCity: (NSMutableArray *)inArguments{
 
     ACArgsUnpack(NSDictionary *jsDic,ACJSFunctionRef *cb) = inArguments;
     if (!jsDic) {
@@ -1236,38 +761,35 @@
     }
     NSString * city = stringArg(jsDic[@"city"]);
     NSString * keyword = stringArg(jsDic[@"searchKey"]);
-    int pageIndex = [[jsDic objectForKey:@"pageNum"] intValue];
-    
-
-    
+    int pageIndex = [[jsDic objectForKey: @"pageNum"] intValue];
     BMKCitySearchOption * option = [[BMKCitySearchOption alloc]init];
     option.city = city;
     option.keyword = keyword;
-    option.pageCapacity = _pageCapacity;
+    option.pageCapacity = self.pageCapacity;
     option.pageIndex = pageIndex;
     uexBaiduPOISearcher *searcher = [[uexBaiduPOISearcher alloc]init];
     searcher.mode = uexBaiduPOISearchModeCity;
     searcher.searchOption = option;
-    [self.searchers addObject:searcher];
-    [searcher searchWithCompletion:^(id resultObj, NSInteger errorCode) {
-        [self cbPOISearchResult:resultObj errorCode:(BMKSearchErrorCode)errorCode cbFunction:cb];
+    [self.searchers addObject: searcher];
+    [searcher searchWithCompletion: ^(id resultObj, NSInteger errorCode) {
+        [self cbPOISearchResult: resultObj errorCode: (BMKSearchErrorCode)errorCode cbFunction: cb];
         [searcher dispose];
-        [self.searchers removeObject:searcher];
+        [self.searchers removeObject: searcher];
         
     }];
 }
 //poiSearchNearBy 周边搜索
--(void)poiNearbySearch:(NSMutableArray *)inArguments{
+- (void)poiNearbySearch: (NSMutableArray *)inArguments{
     //key, longitude, latitude,radius, pageIndex
     ACArgsUnpack(NSDictionary *jsDic,ACJSFunctionRef *cb) = inArguments;
     if (!jsDic) {
         return;
     }
     NSString * keyword = stringArg(jsDic[@"searchKey"]);
-    double longitude = [[jsDic objectForKey:@"longitude"] doubleValue];
-    double latitude = [[jsDic objectForKey:@"latitude"] doubleValue];
-    int radius = [[jsDic objectForKey:@"radius"] intValue];
-    int pageIndex = [[jsDic objectForKey:@"pageNum"] intValue];
+    double longitude = [[jsDic objectForKey: @"longitude"] doubleValue];
+    double latitude = [[jsDic objectForKey: @"latitude"] doubleValue];
+    int radius = [[jsDic objectForKey: @"radius"] intValue];
+    int pageIndex = [[jsDic objectForKey: @"pageNum"] intValue];
 
     //发起检索
     BMKNearbySearchOption * option = [[BMKNearbySearchOption alloc]init];
@@ -1276,38 +798,31 @@
     option.location = CLLocationCoordinate2DMake(latitude, longitude);
     option.keyword = keyword;
     option.radius = radius;
-    
+
     uexBaiduPOISearcher *searcher = [[uexBaiduPOISearcher alloc]init];
     searcher.mode = uexBaiduPOISearchModeNearby;
     searcher.searchOption = option;
-    [self.searchers addObject:searcher];
-    [searcher searchWithCompletion:^(id resultObj, NSInteger errorCode) {
-        [self cbPOISearchResult:resultObj errorCode:(BMKSearchErrorCode)errorCode cbFunction:cb];
+    [self.searchers addObject: searcher];
+    [searcher searchWithCompletion: ^(id resultObj, NSInteger errorCode) {
+        [self cbPOISearchResult: resultObj errorCode: (BMKSearchErrorCode)errorCode cbFunction: cb];
         [searcher dispose];
-        [self.searchers removeObject:searcher];
+        [self.searchers removeObject: searcher];
         
     }];
 }
 
 //poiSearchInBounds 区域内搜索
--(void)poiBoundSearch:(NSMutableArray *)inArguments{
-    //key， lbLongitude， lbLatitude， rtLongitude， rtLatitude， pageIndex
-    
+- (void)poiBoundSearch: (NSMutableArray *)inArguments{
     ACArgsUnpack(NSDictionary *jsDic,ACJSFunctionRef *cb) = inArguments;
     if (!jsDic) {
         return;
     }
-    
-    
-    NSString * keyword = [jsDic objectForKey:@"searchKey"];
-    int pageIndex = [[jsDic objectForKey:@"pageNum"] intValue];
-    
-    double lbLongitude = [[[jsDic objectForKey:@"southwest"] objectForKey:@"longitude"] doubleValue];
-    double lbLatitude = [[[jsDic objectForKey:@"southwest"] objectForKey:@"latitude"] doubleValue];
-    double rtLongitude = [[[jsDic objectForKey:@"northeast"] objectForKey:@"longitude"] doubleValue];
-    double rtLatitude = [[[jsDic objectForKey:@"northeast"] objectForKey:@"latitude"] doubleValue];
-    
-
+    NSString * keyword = [jsDic objectForKey: @"searchKey"];
+    int pageIndex = [[jsDic objectForKey: @"pageNum"] intValue];
+    double lbLongitude = [[[jsDic objectForKey: @"southwest"] objectForKey: @"longitude"] doubleValue];
+    double lbLatitude = [[[jsDic objectForKey: @"southwest"] objectForKey: @"latitude"] doubleValue];
+    double rtLongitude = [[[jsDic objectForKey: @"northeast"] objectForKey: @"longitude"] doubleValue];
+    double rtLatitude = [[[jsDic objectForKey: @"northeast"] objectForKey: @"latitude"] doubleValue];
     
     //发起检索
     BMKBoundSearchOption * option = [[BMKBoundSearchOption alloc]init];
@@ -1320,23 +835,23 @@
     uexBaiduPOISearcher *searcher = [[uexBaiduPOISearcher alloc]init];
     searcher.mode = uexBaiduPOISearchModeBound;
     searcher.searchOption = option;
-    [self.searchers addObject:searcher];
-    [searcher searchWithCompletion:^(id resultObj, NSInteger errorCode) {
-        [self cbPOISearchResult:resultObj errorCode:(BMKSearchErrorCode)errorCode cbFunction:cb];
+    [self.searchers addObject: searcher];
+    [searcher searchWithCompletion: ^(id resultObj, NSInteger errorCode) {
+        [self cbPOISearchResult: resultObj errorCode: (BMKSearchErrorCode)errorCode cbFunction: cb];
         [searcher dispose];
-        [self.searchers removeObject:searcher];
+        [self.searchers removeObject: searcher];
         
     }];
 }
 
 //实现PoiSearchDeleage处理回调结果
 
-- (void)cbPOISearchResult:(BMKPoiResult*)poiResult errorCode:(BMKSearchErrorCode)errorCode cbFunction:(ACJSFunctionRef *)cb{
+- (void)cbPOISearchResult: (BMKPoiResult*)poiResult errorCode: (BMKSearchErrorCode)errorCode cbFunction: (ACJSFunctionRef *)cb{
     __block UEX_ERROR err = kUexNoError;
     __block NSMutableDictionary * resultDic = [NSMutableDictionary dictionary];
     @onExit{
-        [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbPoiSearchResult" arguments:ACArgsPack(resultDic.ac_JSONFragment)];
-        [cb executeWithArguments:ACArgsPack(err,resultDic)];
+        [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbPoiSearchResult" arguments: ACArgsPack(resultDic.ac_JSONFragment)];
+        [cb executeWithArguments: ACArgsPack(err,resultDic)];
     };
     if (errorCode == BMK_SEARCH_AMBIGUOUS_KEYWORD){
         err = uexErrorMake(1,@"起始点有歧义");
@@ -1348,41 +863,34 @@
         return;
     }
     
-    
-    
-    NSString * totalPoiNum = [NSString stringWithFormat:@"%d",poiResult.totalPoiNum];
-    NSString * totalPageNum = [NSString stringWithFormat:@"%d",poiResult.pageNum];
-    NSString * currentPageNum = [NSString stringWithFormat:@"%d",poiResult.currPoiNum];
-    NSString * currentPageCapacity = [NSString stringWithFormat:@"%d",poiResult.pageIndex];
+    NSString * totalPoiNum = [NSString stringWithFormat: @"%d",poiResult.totalPoiNum];
+    NSString * totalPageNum = [NSString stringWithFormat: @"%d",poiResult.pageNum];
+    NSString * currentPageNum = [NSString stringWithFormat: @"%d",poiResult.currPoiNum];
+    NSString * currentPageCapacity = [NSString stringWithFormat: @"%d",poiResult.pageIndex];
     NSMutableArray * poiInfoList = [NSMutableArray array];
     
-    
     for (BMKPoiInfo * poiInfo in poiResult.poiInfoList) {
-        NSString * epoitype = [NSString stringWithFormat:@"%d",poiInfo.epoitype];
-        NSString * latitude = [NSString stringWithFormat:@"%f",poiInfo.pt.latitude];
-        NSString * longitude = [NSString stringWithFormat:@"%f",poiInfo.pt.longitude];
+        NSString * epoitype = [NSString stringWithFormat: @"%d",poiInfo.epoitype];
+        NSString * latitude = [NSString stringWithFormat: @"%f",poiInfo.pt.latitude];
+        NSString * longitude = [NSString stringWithFormat: @"%f",poiInfo.pt.longitude];
         NSMutableDictionary * tempDict = [NSMutableDictionary dictionary];
-        [tempDict setValue:poiInfo.uid forKey:@"uid"];
-        [tempDict setValue:epoitype forKey:@"poiType"];
-        [tempDict setValue:poiInfo.phone forKey:@"phoneNum"];
-        [tempDict setValue:poiInfo.address forKey:@"address"];
-        [tempDict setValue:poiInfo.name forKey:@"name"];
-        [tempDict setValue:longitude forKey:@"longitude"];
-        [tempDict setValue:latitude forKey:@"latitude"];
-        [tempDict setValue:poiInfo.city forKey:@"city"];
-        [tempDict setValue:poiInfo.postcode forKey:@"postCode"];
-        
-        [poiInfoList addObject:tempDict];
-        
+        [tempDict setValue: poiInfo.uid forKey: @"uid"];
+        [tempDict setValue: epoitype forKey: @"poiType"];
+        [tempDict setValue: poiInfo.phone forKey: @"phoneNum"];
+        [tempDict setValue: poiInfo.address forKey: @"address"];
+        [tempDict setValue: poiInfo.name forKey: @"name"];
+        [tempDict setValue: longitude forKey: @"longitude"];
+        [tempDict setValue: latitude forKey: @"latitude"];
+        [tempDict setValue: poiInfo.city forKey: @"city"];
+        [tempDict setValue: poiInfo.postcode forKey: @"postCode"];
+        [poiInfoList addObject: tempDict];
     }
     
-    [resultDic setObject:totalPoiNum forKey:@"totalPoiNum"];
-    [resultDic setObject:totalPageNum forKey:@"totalPageNum"];
-    [resultDic setObject:currentPageNum forKey:@"currentPageNum"];
-    [resultDic setObject:currentPageCapacity forKey:@"currentPageCapacity"];
-    [resultDic setObject:poiInfoList forKey:@"poiInfo"];
-
-    
+    [resultDic setObject: totalPoiNum forKey: @"totalPoiNum"];
+    [resultDic setObject: totalPageNum forKey: @"totalPageNum"];
+    [resultDic setObject: currentPageNum forKey: @"currentPageNum"];
+    [resultDic setObject: currentPageCapacity forKey: @"currentPageCapacity"];
+    [resultDic setObject: poiInfoList forKey: @"poiInfo"];
 
 }
 
@@ -1390,130 +898,171 @@
 
 //*****************线路规划**********************************
 //busLineSearch公交线路搜索
--(void)busLineSearch:(NSMutableArray *)inArguments{
-    ACArgsUnpack(NSDictionary *jsDic,ACJSFunctionRef *cb) = inArguments;
-    if (!jsDic) {
-        return;
-    }
-    
-    BusLineObjct * tempBusLineObj = [_routePlanDic objectForKey:@"busLineObj"];
-    if (tempBusLineObj) {
-        [tempBusLineObj remove];
-    }
-    
-    
-    [self.overlayDataDic setObject:@"busline" forKey:@"id"];
-    NSString * fillColor = [MapUtility changeUIColorToRGB:[[UIColor blueColor] colorWithAlphaComponent:0.7]];//[MapUtility changeUIColorToRGB:[[UIColor cyanColor] colorWithAlphaComponent:1]];
-    [self.overlayDataDic setObject:fillColor forKey:@"fillColor"];
-    NSString * strokeColor = [MapUtility changeUIColorToRGB:[[UIColor blueColor] colorWithAlphaComponent:0.7]];
-    [self.overlayDataDic setObject:strokeColor forKey:@"strokeColor"];
-    [self.overlayDataDic setObject:@"3.0" forKey:@"lineWidth"];
-    
-    BusLineObjct * busLineObj = [[BusLineObjct alloc]initWithuexObj:self andMapView:self.currentMapView andJson:jsDic];
-    [_routePlanDic setObject:busLineObj forKey:@"busLineObj"];
-    [busLineObj searchWithCompletion:^(id result, NSInteger error) {
-        [busLineObj dispose];
-        BMKBusLineResult* busLineResult = (BMKBusLineResult *)result;
-        UEX_ERROR err = kUexNoError;
-        NSDictionary *dict = nil;
-        
-        if (error == BMK_SEARCH_NO_ERROR) {
-            NSString * busCompany = busLineResult.busCompany;
-            NSString * busLineName = busLineResult.busLineName;
-            NSString * uid = busLineResult.uid;
-            NSString * startTime = busLineResult.startTime;
-            NSString * endTime = busLineResult.endTime;
-            NSString * isMonTicket = [NSString stringWithFormat:@"%d",busLineResult.isMonTicket];
-            NSMutableArray *  busStations = [NSMutableArray array];
-            for (BMKBusStation * station in busLineResult.busStations) {
-                NSString * title = station.title;
-                double lon = station.location.longitude;
-                NSString * longitude = [NSString stringWithFormat:@"%f",lon];
-                double lat = station.location.latitude;
-                NSString * latitude = [NSString stringWithFormat:@"%f",lat];
-                NSDictionary * tempDic = [NSDictionary dictionaryWithObjectsAndKeys:title,@"title",longitude,@"longitude",latitude,@"latitude", nil];
-                [busStations addObject:tempDic];
-            }
-            
-            dict = [NSDictionary dictionaryWithObjectsAndKeys:busCompany,@"busCompany",busLineName,@"busLineName",uid,@"uid",startTime,@"startTime",endTime,@"endTime",isMonTicket,@"isMonTicket",busStations,@"busStations", nil];
-
+- (void)busLineSearch: (NSMutableArray *)inArguments{
+    ACArgsUnpack(NSDictionary *info,ACJSFunctionRef *callback) = inArguments;
+    NSString *city = stringArg(info[@"city"]);
+    NSString *busLineName = stringArg(info[@"busLineName"]);
+    UEX_PARAM_GUARD_NOT_NIL(city);
+    UEX_PARAM_GUARD_NOT_NIL(busLineName);
+    uexBaiduBusLineSearcher *searcher = [[uexBaiduBusLineSearcher alloc] init];
+    searcher.city = city;
+    searcher.busLineName = busLineName;
+    [self.searchers addObject: searcher];
+    [searcher searchWithCompletion: ^(BMKBusLineResult *result, NSInteger errorCode) {
+        NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+        UEX_ERROR error = kUexNoError;
+        if (errorCode != BMK_SEARCH_NO_ERROR) {
+            dict = nil;
+            error = uexErrorMake(errorCode);
         }else{
-            err = uexErrorMake(error);
+            [self addBusLineOverlaysAndAnnotationsWithSearchResult: result];
+            dict[@"busCompany"] = result.busCompany;
+            dict[@"busLineName"] = result.busLineName;
+            dict[@"uid"] = result.uid;
+            dict[@"startTime"] = result.startTime;
+            dict[@"endTime"] = result.endTime;
+            dict[@"isMonTicket"] = @(result.isMonTicket);
+            NSMutableArray *stations = [NSMutableArray array];
+            for ( BMKBusStation *station in result.busStations) {
+                NSMutableDictionary *stationDict = [NSMutableDictionary dictionary];
+                stationDict[@"title"] = station.title;
+                stationDict[@"longitude"] = @(station.location.longitude);
+                stationDict[@"latitude"] = @(station.location.latitude);
+                [stations addObject: stationDict];
+            }
+            dict[@"busStations"] = stations;
         }
-        [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbBusLineSearchResult" arguments:ACArgsPack(dict.ac_JSONFragment)];
-        [cb executeWithArguments:ACArgsPack(err,dict)];
+        [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbBusLineSearchResult" arguments: ACArgsPack(dict.ac_JSONFragment)];
+        [callback executeWithArguments: ACArgsPack(dict,dict)];
+        [searcher dispose];
+        [self.searchers removeObject: searcher];
     }];
-    
-    
-
-
 }
 
--(void)removeBusLine:(NSMutableArray *)inArguments {
-    BusLineObjct * busLineObj = [_routePlanDic objectForKey:@"busLineObj"];
-    if (busLineObj) {
-        [busLineObj remove];
-        [_routePlanDic removeObjectForKey:@"busLineObj"];
+static NSString *const kBusLineObjectIdentifierPrefix = @"uexBaiduMap.busLine.";
+- (void)removeBusLineObjects{
+    for(NSString *identifier in self.annotations.allKeys) {
+        if ([identifier hasPrefix: kBusLineObjectIdentifierPrefix]) {
+            [self removeAnnotationWithIdentifier: identifier];
+        }
+    }
+    for(NSString *identifier in self.overlays.allKeys) {
+        if ([identifier hasPrefix: kBusLineObjectIdentifierPrefix]) {
+            [self removeOverlayWithIdentifier: identifier];
+        }
+    }
+}
+
+- (void)addBusLineOverlaysAndAnnotationsWithSearchResult: (BMKBusLineResult *)result{
+    [self removeBusLineObjects];
+    NSString *(^getID)() = ^{
+        return [kBusLineObjectIdentifierPrefix stringByAppendingString: UUID()];
+    };
+    
+    //添加公交站点的Annotation
+    for (BMKBusStation *station in result.busStations) {
+        uexBaiduMapNodeAnnotation *annotation = [uexBaiduMapNodeAnnotation busNodeAnnotation];
+        annotation.identifier = getID();
+        annotation.coordinate = station.location;
+        annotation.title = station.title;
+        [self addAnnotation: annotation];
+    }
+    
+    //添加公交线路的overlay
+    uexBaiduMapPolylineOverlay *overlay = [[uexBaiduMapPolylineOverlay alloc]init];
+    overlay.identidier = getID();
+    overlay.fillColor = [UIColor colorWithRed: 0 green: 1 blue: 1 alpha: 1];
+    overlay.lineWidth = 3;
+    overlay.strokeColor = [UIColor colorWithRed: 0 green: 0 blue: 1 alpha: 0.7];
+    NSMutableArray<CLLocation *> *points = [NSMutableArray array];
+    for (BMKBusStep *step in result.busSteps){
+        for (NSInteger i = 0; i < step.pointsCount; i++){
+            BMKMapPoint mapPoint = step.points[i];
+            CLLocationCoordinate2D coordinate = BMKCoordinateForMapPoint(mapPoint);
+            CLLocation *location = [[CLLocation alloc]initWithLatitude: coordinate.latitude longitude: coordinate.longitude];
+            [points addObject: location];
+        }
+    }
+    overlay.points = points;
+    [self addOverlay: overlay];
+    
+    //设置地图中心点为起始站点
+    BMKBusStation* start = result.busStations.firstObject;
+    if (start) {
+        [self.currentMapView setCenterCoordinate: start.location animated: YES];
     }
 }
 
 
+- (void)removeBusLine: (NSMutableArray *)inArguments {
+    [self removeBusLineObjects];
+}
 
 
--(void)removeRoutePlan:(NSMutableArray *)inArguments {
 
-    ACArgsUnpack(NSString *idStr) = inArguments;
-    if (!idStr) {
+
+- (void)removeRoutePlan: (NSMutableArray *)inArguments {
+    ACArgsUnpack(NSString *identifier) = inArguments;
+    [self removeRoutePlanObjectsWithIdentifier:identifier];
+}
+
+- (void)addRoutePlanObjectsWithResult:(uexBaiduMapRoutePlanResult *)result{
+    if (!self.currentMapView || result) {
         return;
     }
-    SearchPlanObject * spObj = [_routePlanDic objectForKey:idStr];
-    if (spObj) {
-        [spObj remove];
+    NSString *identifier = result.identifier;
+    if ([self.routePlanResults.allKeys containsObject:identifier]) {
+        [self removeRoutePlanObjectsWithIdentifier:identifier];
     }
+    [self addOverlay:result.associatedOverlay];
+    for (uexBaiduMapNodeAnnotation *annotation in result.associatedAnnotations){
+        [self addAnnotation:annotation];
+    }
+    [self.routePlanResults setValue:result forKey:identifier];
+}
+- (void)removeRoutePlanObjectsWithIdentifier: (NSString *)identifier{
+    if (!self.currentMapView || !identifier) {
+        return;
+    }
+    uexBaiduMapRoutePlanResult *result = self.routePlanResults[identifier];
+    [self removeOverlayWithIdentifier: result.associatedOverlay.identidier];
+    for (uexBaiduMapNodeAnnotation *annotation in result.associatedAnnotations){
+        [self removeAnnotationWithIdentifier: annotation.identifier];
+    }
+    [self.routePlanResults removeObjectForKey: identifier];
 }
 
-
--(NSString *)searchRoutePlan:(NSMutableArray *)inArguments {
-    ACArgsUnpack(NSDictionary *dict,ACJSFunctionRef *cb) = inArguments;
-    
-    NSString * idStr = [dict objectForKey:@"id"]?:[self randomString];
-    SearchPlanObject * spObjTemp = [_routePlanDic objectForKey:idStr];
-    if (spObjTemp) {
-        [spObjTemp remove];
-    }
-    
-    [self.overlayDataDic setObject:@"Walking" forKey:@"id"];
-    NSString * fillColor = [MapUtility changeUIColorToRGB:[[UIColor blueColor] colorWithAlphaComponent:0.7]];//[MapUtility changeUIColorToRGB:[[UIColor cyanColor] colorWithAlphaComponent:1]];
-    [self.overlayDataDic setObject:fillColor forKey:@"fillColor"];
-    NSString * strokeColor = [MapUtility changeUIColorToRGB:[[UIColor blueColor] colorWithAlphaComponent:0.7]];
-    [self.overlayDataDic setObject:strokeColor forKey:@"strokeColor"];
-    [self.overlayDataDic setObject:@"3.0" forKey:@"lineWidth"];
-
-    
-    
-    
-    SearchPlanObject * spObj = [[SearchPlanObject alloc]initWithuexObj:self andMapView:self.currentMapView andJson:dict];
-    [_routePlanDic setObject:spObj forKey:idStr];
-
-    [spObj searchWithCompletion:^(id resultObj, NSInteger errorCode) {
-
-        [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onSearchRoutePlan" arguments:ACArgsPack(idStr,@(errorCode))];
-        [cb executeWithArguments:ACArgsPack(@(errorCode))];
-        [spObj dispose];
+- (NSString *)searchRoutePlan: (NSMutableArray *)inArguments {
+    ACArgsUnpack(NSDictionary *info,ACJSFunctionRef *callback) = inArguments;
+    UEX_PARAM_GUARD_NOT_NIL(info, nil);
+    uexBaiduMapRoutePlanSearcher *searcher = [[uexBaiduMapRoutePlanSearcher alloc] initWithInfoDictionary: info];
+    UEX_PARAM_GUARD_NOT_NIL(searcher, nil);
+    NSString *identifier = searcher.identifier;
+    [searcher searchWithCompletion: ^(uexBaiduMapRoutePlanResult *result, NSInteger errorCode) {
+        UEX_ERROR e = kUexNoError;
+        if (errorCode != BMK_SEARCH_NO_ERROR) {
+            e = uexErrorMake(errorCode);
+        }else{
+            [self addRoutePlanObjectsWithResult:result];
+        }
+        [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onSearchRoutePlan" arguments: ACArgsPack(identifier,@(errorCode))];
+        [callback executeWithArguments: ACArgsPack(@(errorCode))];
+        [searcher dispose];
     }];
-    return idStr;
+    return identifier;
+    
 }
 
 
 //*****************地里编码**********************************
--(void)geocode:(NSMutableArray *)inArguments{
+- (void)geocode: (NSMutableArray *)inArguments{
     ACArgsUnpack(NSDictionary *jsDic,ACJSFunctionRef *cb) = inArguments;
     if (!jsDic) {
         return;
     }
     
-    NSString * city = [jsDic objectForKey:@"city"];
-    NSString * address = [jsDic objectForKey:@"address"];
+    NSString * city = [jsDic objectForKey: @"city"];
+    NSString * address = [jsDic objectForKey: @"address"];
     
 
     BMKGeoCodeSearchOption * geoCodeSearchOption = [[BMKGeoCodeSearchOption alloc] init];
@@ -1523,19 +1072,19 @@
     
     uexBaiduGeoCodeSearcher *searcher = [[uexBaiduGeoCodeSearcher alloc]init];
     searcher.option = geoCodeSearchOption;
-    [self.searchers addObject:searcher];
-    [searcher searchWithCompletion:^(id resultObj, NSInteger errorCode) {
+    [self.searchers addObject: searcher];
+    [searcher searchWithCompletion: ^(id resultObj, NSInteger errorCode) {
         BMKGeoCodeResult *result = (BMKGeoCodeResult *)resultObj;
         if (errorCode != BMK_SEARCH_NO_ERROR) {
-            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbGeoCodeResult" arguments:ACArgsPack(@(errorCode))];
-            [cb executeWithArguments:ACArgsPack(@(errorCode))];
+            [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbGeoCodeResult" arguments: ACArgsPack(@(errorCode))];
+            [cb executeWithArguments: ACArgsPack(@(errorCode))];
         }else{
             NSDictionary *dict = @{
-                                   @"longitude":@(result.location.longitude),
-                                   @"latitude":@(result.location.latitude)
+                                   @"longitude": @(result.location.longitude),
+                                   @"latitude": @(result.location.latitude)
                                    };
-            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbGeoCodeResult" arguments:ACArgsPack(dict.ac_JSONFragment)];
-            [cb executeWithArguments:ACArgsPack(@0,dict)];
+            [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbGeoCodeResult" arguments: ACArgsPack(dict.ac_JSONFragment)];
+            [cb executeWithArguments: ACArgsPack(@0,dict)];
         }
         [searcher dispose];
     }];
@@ -1546,7 +1095,7 @@
 
 
 
--(void)reverseGeocode: (NSMutableArray *) inArguments {
+- (void)reverseGeocode: (NSMutableArray *) inArguments {
     
     ACArgsUnpack(NSDictionary *jsDic,ACJSFunctionRef *cb) = inArguments;
     if (!jsDic) {
@@ -1554,8 +1103,8 @@
     }
 
     
-    double longitude = [[jsDic objectForKey:@"longitude"] doubleValue];
-    double latitude = [[jsDic objectForKey:@"latitude"] doubleValue];
+    double longitude = [[jsDic objectForKey: @"longitude"] doubleValue];
+    double latitude = [[jsDic objectForKey: @"latitude"] doubleValue];
     CLLocationCoordinate2D pt = CLLocationCoordinate2DMake(latitude, longitude);
 
 
@@ -1564,23 +1113,23 @@
     
     uexBaiduReverseGeocodeSearcher *searcher = [[uexBaiduReverseGeocodeSearcher alloc]init];
     searcher.option = reverseGeoCodeSearchOption;
-    [self.searchers addObject:searcher];
-    [searcher searchWithCompletion:^(id resultObj, NSInteger errorCode) {
+    [self.searchers addObject: searcher];
+    [searcher searchWithCompletion: ^(id resultObj, NSInteger errorCode) {
         BMKReverseGeoCodeResult *result = (BMKReverseGeoCodeResult *)resultObj;
         
         if (errorCode != BMK_SEARCH_NO_ERROR) {
-            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbReverseGeoCodeResult" arguments:ACArgsPack(@(errorCode))];
-            [cb executeWithArguments:ACArgsPack(@(errorCode))];
+            [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbReverseGeoCodeResult" arguments: ACArgsPack(@(errorCode))];
+            [cb executeWithArguments: ACArgsPack(@(errorCode))];
         } else {
             NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-            [dict setValue:result.address forKey:@"address"];
-            [dict setValue:result.addressDetail.city forKey:@"city"];
-            [dict setValue:result.addressDetail.streetName forKey:@"street"];
-            [dict setValue:result.addressDetail.streetNumber forKey:@"streetNumber"];
-            [dict setValue:result.addressDetail.province forKey:@"province"];
-            [dict setValue:result.addressDetail.district forKey:@"district"];
-            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbReverseGeoCodeResult" arguments:ACArgsPack(dict.ac_JSONFragment)];
-            [cb executeWithArguments:ACArgsPack(@0,dict)];
+            [dict setValue: result.address forKey: @"address"];
+            [dict setValue: result.addressDetail.city forKey: @"city"];
+            [dict setValue: result.addressDetail.streetName forKey: @"street"];
+            [dict setValue: result.addressDetail.streetNumber forKey: @"streetNumber"];
+            [dict setValue: result.addressDetail.province forKey: @"province"];
+            [dict setValue: result.addressDetail.district forKey: @"district"];
+            [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbReverseGeoCodeResult" arguments: ACArgsPack(dict.ac_JSONFragment)];
+            [cb executeWithArguments: ACArgsPack(@0,dict)];
         }
     }];
 }
@@ -1588,65 +1137,78 @@
 //******************计算工具*****************************
 
 //计算两点之间距离
-- (NSNumber *)getDistance:(NSMutableArray*)inArguments{
-    double lat1 = [[inArguments objectAtIndex:0] doubleValue];
-    double lon1 = [[inArguments objectAtIndex:1] doubleValue];
-    double lat2 = [[inArguments objectAtIndex:2] doubleValue];
-    double lon2 = [[inArguments objectAtIndex:3] doubleValue];
+- (NSNumber *)getDistance: (NSMutableArray*)inArguments{
+    double lat1 = [[inArguments objectAtIndex: 0] doubleValue];
+    double lon1 = [[inArguments objectAtIndex: 1] doubleValue];
+    double lat2 = [[inArguments objectAtIndex: 2] doubleValue];
+    double lon2 = [[inArguments objectAtIndex: 3] doubleValue];
     BMKMapPoint point1 = BMKMapPointForCoordinate(CLLocationCoordinate2DMake(lat1,lon1));
     BMKMapPoint point2 = BMKMapPointForCoordinate(CLLocationCoordinate2DMake(lat2,lon2));
     CLLocationDistance distance = BMKMetersBetweenMapPoints(point1,point2);
 
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbGetDistance" arguments:ACArgsPack(@0,@1,@(distance))];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbGetDistance" arguments: ACArgsPack(@0,@1,@(distance))];
     return @(distance);
 }
 
-- (NSDictionary *)getCenter:(NSMutableArray*)inArguments{
+- (NSDictionary *)getCenter: (NSMutableArray*)inArguments{
     if (!self.currentMapView) {
         return nil;
     }
     NSDictionary *center = @{
-                             @"latitude":@(self.currentMapView.centerCoordinate.latitude),
-                             @"longitude":@(self.currentMapView.centerCoordinate.longitude)
+                             @"latitude": @(self.currentMapView.centerCoordinate.latitude),
+                             @"longitude": @(self.currentMapView.centerCoordinate.longitude)
                              };
-    [self.webViewEngine callbackWithFunctionKeyPath:@"cbGetCenter" arguments:ACArgsPack(center.ac_JSONFragment)];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"cbGetCenter" arguments: ACArgsPack(center.ac_JSONFragment)];
     return center;
 }
 
 //转换GPS坐标至百度坐标
-- (void)getBaiduFromGPS:(NSMutableArray *)inArguments{
+- (void)getBaiduFromGPS: (NSMutableArray *)inArguments{
     CLLocationCoordinate2D locationCoord;
     if ([inArguments count] == 2) {
-        locationCoord.longitude = [[inArguments objectAtIndex:0] doubleValue];
-        locationCoord.latitude = [[inArguments objectAtIndex:1] doubleValue];
+        locationCoord.longitude = [[inArguments objectAtIndex: 0] doubleValue];
+        locationCoord.latitude = [[inArguments objectAtIndex: 1] doubleValue];
     }
 
     //BMK_COORDTYPE_GPS----->///GPS设备采集的原始GPS坐标
     NSDictionary * baidudict = BMKConvertBaiduCoorFrom(CLLocationCoordinate2DMake(locationCoord.latitude, locationCoord.longitude),BMK_COORDTYPE_GPS);
     CLLocationCoordinate2D lC2D = BMKCoorDictionaryDecode(baidudict);
 
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbBaiduFromGPS" arguments:ACArgsPack(@(lC2D.latitude),@(lC2D.longitude))];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbBaiduFromGPS" arguments: ACArgsPack(@(lC2D.latitude),@(lC2D.longitude))];
 
 }
 
 //转换 google地图、soso地图、aliyun地图、mapabc地图和amap地图所用坐标至百度坐标
-- (void)getBaiduFromGoogle:(NSMutableArray *)inArguments{
+- (void)getBaiduFromGoogle: (NSMutableArray *)inArguments{
     CLLocationCoordinate2D locationCoord;
-    if ([inArguments count]== 2) {
-        locationCoord.longitude = [[inArguments objectAtIndex:0] doubleValue];
-        locationCoord.latitude = [[inArguments objectAtIndex:1] doubleValue];
+    if ([inArguments count] == 2) {
+        locationCoord.longitude = [[inArguments objectAtIndex: 0] doubleValue];
+        locationCoord.latitude = [[inArguments objectAtIndex: 1] doubleValue];
     }
 
     NSDictionary * baidudict = BMKConvertBaiduCoorFrom(CLLocationCoordinate2DMake(locationCoord.latitude, locationCoord.longitude),BMK_COORDTYPE_COMMON);
     CLLocationCoordinate2D lC2D = BMKCoorDictionaryDecode(baidudict);
 
 
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbBaiduFromGoogle" arguments:ACArgsPack(@(lC2D.latitude),@(lC2D.longitude))];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbBaiduFromGoogle" arguments: ACArgsPack(@(lC2D.latitude),@(lC2D.longitude))];
 }
 //******************定位*****************************
--(void)getCurrentLocation:(NSMutableArray *)inArguments{
+
+
+- (NSDictionary *)getLocationData{
+    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+    CLLocation *location = self.locationService.userLocation.location;
+    dict[@"latitude"] = @(location.coordinate.latitude);
+    dict[@"longitude"] = @(location.coordinate.longitude);
+    NSDateFormatter *formatter = [[NSDateFormatter alloc]init];
+    formatter.dateFormat = @"yyyy-MM-dd HH: mm: ss";
+    dict[@"timestamp"] = [formatter stringFromDate: location.timestamp];
+    return [dict copy];
+}
+
+- (void)getCurrentLocation: (NSMutableArray *)inArguments{
     
-    ACArgsUnpack(ACJSFunctionRef *cbCurrentLocation) = inArguments;
+    ACArgsUnpack(ACJSFunctionRef *callback) = inArguments;
     
     if (!self.locationService) {
         self.locationService = [[BMKLocationService alloc]init];
@@ -1655,24 +1217,16 @@
         self.locationService.delegate = self;
         [self.locationService startUserLocationService];
         _isUpdateLocationOnce = YES;
-        [self.tmpFuncDict setValue:cbCurrentLocation forKey:@"cbCurrentLocation"];
+        self.cbGetCurrentLocationFunc = callback;
     } else {
-        double longit = _locationService.userLocation.location.coordinate.longitude;
-        double lat = _locationService.userLocation.location.coordinate.latitude;
-        NSDate * timestamp = _locationService.userLocation.location.timestamp;
-        NSString * timeStr = [NSString stringWithFormat:@"%.0f", [timestamp timeIntervalSince1970]];
-        NSDictionary *dict = @{
-                               @"longitude":@(longit),
-                               @"latitude":@(lat),
-                               @"timestamp":timeStr
-                               };
-        [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbCurrentLocation" arguments:ACArgsPack(dict.ac_JSONFragment)];
-        [cbCurrentLocation executeWithArguments:ACArgsPack(kUexNoError,dict)];
+        NSDictionary *dict = [self getLocationData];
+        [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbCurrentLocation" arguments: ACArgsPack(dict.ac_JSONFragment)];
+        [callback executeWithArguments: ACArgsPack(kUexNoError,dict)];
     }
     
 }
 
-- (void)startLocation:(NSMutableArray *)inArguments {
+- (void)startLocation: (NSMutableArray *)inArguments {
     if (!self.locationService) {
         self.locationService = [[BMKLocationService alloc]init];
     }
@@ -1683,7 +1237,7 @@
     
 }
 
-- (void)stopLocation:(NSMutableArray *)inArguments {
+- (void)stopLocation: (NSMutableArray *)inArguments {
     self.currentMapView.showsUserLocation = NO;
     if (self.locationService) {
         [self.locationService stopUserLocationService];
@@ -1692,10 +1246,10 @@
 }
 
 //显示当前位置
--(void)setMyLocationEnable:(NSMutableArray *)inArguments{
+- (void)setMyLocationEnable: (NSMutableArray *)inArguments{
     BOOL isShow = NO;
     if ([inArguments count] > 0) {
-        isShow = [[inArguments objectAtIndex:0] boolValue];
+        isShow = [[inArguments objectAtIndex: 0] boolValue];
     }
     
     if (!_didStartLocatingUser) {
@@ -1721,7 +1275,7 @@
 - (void)willStartLocatingUser{
     _didStartLocatingUser = YES;
     
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbStartLocation" arguments:ACArgsPack(@0,@2,@0)];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbStartLocation" arguments: ACArgsPack(@0,@2,@0)];
 }
 
 /**
@@ -1729,69 +1283,59 @@
  */
 - (void)didStopLocatingUser{
     _didStartLocatingUser = NO;
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbStopLocation" arguments:ACArgsPack(@0,@2,@0)];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbStopLocation" arguments: ACArgsPack(@0,@2,@0)];
 }
 
 //处理方向变更信息
-- (void)didUpdateUserHeading:(BMKUserLocation *)userLocation
+- (void)didUpdateUserHeading: (BMKUserLocation *)userLocation
 {
-    [self.currentMapView updateLocationData:userLocation];
+    [self.currentMapView updateLocationData: userLocation];
 }
 /**
  *用户位置更新后，会调用此函数
  *@param userLocation 新的用户位置
  */
-- (void)didUpdateBMKUserLocation:(BMKUserLocation *)userLocation{
-    double longit = _locationService.userLocation.location.coordinate.longitude;
-    double lat = _locationService.userLocation.location.coordinate.latitude;
-    NSDate * timestamp = _locationService.userLocation.location.timestamp;
-    NSString * timeStr = [NSString stringWithFormat:@"%.0f", [timestamp timeIntervalSince1970]];
-    NSDictionary *dict = @{
-                           @"longitude":@(longit),
-                           @"latitude":@(lat),
-                           @"timestamp":timeStr
-                           };
-    
+- (void)didUpdateBMKUserLocation: (BMKUserLocation *)userLocation{
+    NSDictionary *dict = [self getLocationData];
     if (_isUpdateLocationOnce) {
         _isUpdateLocationOnce = NO;
-        [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.cbCurrentLocation" arguments:ACArgsPack(dict.ac_JSONFragment)];
-        [self.tmpFuncDict[@"cbCurrentLocation"] executeWithArguments:ACArgsPack(kUexNoError,dict) completionHandler:^(JSValue * _Nullable returnValue) {
-            [self.tmpFuncDict setValue:nil forKey:@"cbCurrentLocation"];
-        }];
+        [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.cbCurrentLocation" arguments: ACArgsPack(dict.ac_JSONFragment)];
+        [self.cbGetCurrentLocationFunc executeWithArguments: ACArgsPack(kUexNoError, dict)];
+        self.cbGetCurrentLocationFunc = nil;
         [self.locationService stopUserLocationService];
         return;
     }
-    [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onReceiveLocation" arguments:ACArgsPack(dict.ac_JSONFragment)];
-    [self.currentMapView updateLocationData:userLocation];
+    [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onReceiveLocation" arguments: ACArgsPack(dict.ac_JSONFragment)];
+    [self.currentMapView updateLocationData: userLocation];
 }
 
 /**
  *定位失败后，会调用此函数
  *@param error 错误号
  */
-- (void)didFailToLocateUserWithError:(NSError *)error{
+- (void)didFailToLocateUserWithError: (NSError *)error{
 
 }
 
-- (void)setUserTrackingMode:(NSMutableArray *)inArguments {
+- (void)setUserTrackingMode: (NSMutableArray *)inArguments {
 //    BMKUserTrackingModeNone = 0,             /// 普通定位模式
 //    BMKUserTrackingModeFollow,               /// 定位跟随模式
 //    BMKUserTrackingModeFollowWithHeading,    /// 定位罗盘模式
     int mode = 0;//
     if ([inArguments count] >= 1) {
-        mode = [[inArguments objectAtIndex:0] intValue];
+        mode = [[inArguments objectAtIndex: 0] intValue];
     }
     
     
     self.currentMapView.showsUserLocation = NO;
     switch (mode) {
-        case BMKUserTrackingModeFollow:
+        case BMKUserTrackingModeFollow: 
             self.currentMapView.userTrackingMode = BMKUserTrackingModeFollow;
             break;
-        case BMKUserTrackingModeFollowWithHeading:
+        case BMKUserTrackingModeFollowWithHeading: 
             self.currentMapView.userTrackingMode = BMKUserTrackingModeFollowWithHeading;
             break;
-        default:
+        default: 
             self.currentMapView.userTrackingMode = BMKUserTrackingModeNone;
             break;
     }
