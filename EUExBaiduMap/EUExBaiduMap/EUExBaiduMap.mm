@@ -657,8 +657,8 @@
     for (NSString * pointId in [_pointAnnotationViewDic allKeys]) {
         BMKAnnotationView * aView = [_pointAnnotationViewDic objectForKey:pointId];
         if ([aView isEqual:view]) {
-            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onMakerClickListner" arguments:ACArgsPack(numberArg(pointId))];
-            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onMarkerClickListener" arguments:ACArgsPack(numberArg(pointId))];
+            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onMakerClickListner" arguments:ACArgsPack(pointId)];
+            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onMarkerClickListener" arguments:ACArgsPack(pointId)];
         }
     }
     
@@ -984,8 +984,8 @@
     for (NSString * pointId in [_pointAnnotationViewDic allKeys]) {
         BMKAnnotationView * aView = [_pointAnnotationViewDic objectForKey:pointId];
         if ([aView isEqual:view]) {
-            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onMakerBubbleClickListner" arguments:ACArgsPack(numberArg(pointId))];
-            [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onMarkerBubbleClickListener" arguments:ACArgsPack(numberArg(pointId))];
+            [self.webViewEngine callbackWithFunctionKeyPath:@"uexBaiduMap.onMakerBubbleClickListner" arguments:ACArgsPack(pointId)];
+            [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onMarkerBubbleClickListener" arguments:ACArgsPack(pointId)];
         }
     }
 }
