@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <uexplugins>
     <plugin
-        uexName="uexBaiduMap" version="4.0.3" build="3">
-        <info>3: 修复窗口关闭导致后续的搜索功能异常的问题</info>
+        uexName="uexBaiduMap" version="4.0.4" build="4">
+        <info>4: 修复标注ID为字符串类型</info>
+        <build>3: 修复窗口关闭导致后续的搜索功能异常的问题</build>
         <build>2: SDK更新,支持ATS;反地理编码现在可以返回更详细的信息</build>
         <build>1: 修复getCurrentLocation回调参数错误的问题</build>
         <build>0:百度地图插件 for iOS</build>
