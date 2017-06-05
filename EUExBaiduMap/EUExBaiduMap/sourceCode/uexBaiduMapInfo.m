@@ -120,7 +120,7 @@ FOUNDATION_STATIC_INLINE NSDictionary * dictFromCoordinate(CLLocationCoordinate2
         return;
     }
     _southwest = southwest;
-    self.changeData[@"northeast"] = dictFromCoordinate(southwest);
+    self.changeData[@"southwest"] = dictFromCoordinate(southwest);
     
 }
 

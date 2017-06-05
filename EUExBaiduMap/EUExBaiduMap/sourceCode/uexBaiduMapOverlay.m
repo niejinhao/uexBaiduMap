@@ -93,7 +93,7 @@ static CLLocationCoordinate2D *coordinatesFromLocations(NSArray<CLLocation *> *l
     UEX_PARAM_GUARD_NOT_NIL(info, nil);
     self = [super init];
     if (self) {
-        _identidier = identifierFromData(info[@"id"]);
+        _identifier = identifierFromData(info[@"id"]);
         _lineWidth = numberArg(info[@"lineWidth"]).floatValue;
         _strokeColor = colorFromData(info[@"strokeColor"]);
         _fillColor = colorFromData(info[@"fillColor"]);

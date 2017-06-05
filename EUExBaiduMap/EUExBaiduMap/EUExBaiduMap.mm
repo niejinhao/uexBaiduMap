@@ -226,12 +226,17 @@ static BMKMapManager *_mapManager = nil;
     if (!annotation || !self.currentMapView) {
         return;
     }
-    [self.currentMapView addAnnotation: annotation];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.currentMapView addAnnotation: annotation];
+    });
     [self.annotations setValue: annotation forKey: annotation.identifier];
+
 }
 - (void)removeAnnotationWithIdentifier: (NSString *)identifier{
     uexBaiduMapAnnotation *annotation = self.annotations[identifier];
-    [self.currentMapView removeAnnotation: annotation];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.currentMapView removeAnnotation: annotation];
+    });
     [self.annotations removeObjectForKey: identifier];
 }
 - (void)removeAllAnnotations{
@@ -286,14 +291,16 @@ static BMKMapManager *_mapManager = nil;
 - (UEX_BOOL)setMarkerOverlay: (NSMutableArray *)inArguments {
 
     
-    ACArgsUnpack(NSString *identifier,NSDictionary *info) = inArguments;
+    ACArgsUnpack(NSString *identifier,NSDictionary *makerInfo) = inArguments;
     uexBaiduMapCustomAnnotation *annotation = (uexBaiduMapCustomAnnotation *)self.annotations[identifier];
     UEX_PARAM_GUARD_NOT_NIL(annotation, UEX_FALSE);
+    UEX_PARAM_GUARD_NOT_NIL(makerInfo, UEX_FALSE);
+    NSDictionary *info = dictionaryArg(makerInfo[@"makerInfo"]);
     UEX_PARAM_GUARD_NOT_NIL(info, UEX_FALSE);
     [self removeAnnotationWithIdentifier: identifier];
     CLLocationCoordinate2D coordinate = annotation.coordinate;
     NSNumber *lonNum = numberArg(info[@"longitude"]);
-    NSNumber *latNum = numberArg(info[@"longitude"]);
+    NSNumber *latNum = numberArg(info[@"latitude"]);
     if (lonNum) {
         coordinate.longitude = lonNum.doubleValue;
     }
@@ -380,7 +387,7 @@ static BMKMapManager *_mapManager = nil;
     if (![annotation isKindOfClass: [uexBaiduMapCustomAnnotation class]]) {
         return;
     }
-    NSString *identifier = [annotation identidier];
+    NSString *identifier = [annotation identifier];
     if (!identifier) {
         return;
     }
@@ -410,7 +417,7 @@ static BMKMapManager *_mapManager = nil;
     if (!overlay || !self.currentMapView) {
         return;
     }
-    NSString *identifier = overlay.identidier;
+    NSString *identifier = overlay.identifier;
     [self removeOverlayWithIdentifier: identifier];
     self.overlays[identifier] = overlay;
     [self.currentMapView addOverlay: overlay.bmkOverlay];
@@ -422,7 +429,7 @@ static BMKMapManager *_mapManager = nil;
     ACArgsUnpack(NSDictionary* info) = inArguments;
     uexBaiduMapDotOverlay *overlay = [[uexBaiduMapDotOverlay alloc]initWithInfoDictionary: info];
     [self addOverlay: overlay];
-    return overlay.identidier;
+    return overlay.identifier;
 }
 
 
@@ -431,7 +438,7 @@ static BMKMapManager *_mapManager = nil;
     ACArgsUnpack(NSDictionary* info) = inArguments;
     uexBaiduMapArcOverlay *overlay = [[uexBaiduMapArcOverlay alloc]initWithInfoDictionary: info];
     [self addOverlay: overlay];
-    return overlay.identidier;
+    return overlay.identifier;
 }
 
 //添加线型覆盖物
@@ -439,7 +446,7 @@ static BMKMapManager *_mapManager = nil;
     ACArgsUnpack(NSDictionary* info) = inArguments;
     uexBaiduMapPolylineOverlay *overlay = [[uexBaiduMapPolylineOverlay alloc]initWithInfoDictionary: info];
     [self addOverlay: overlay];
-    return overlay.identidier;
+    return overlay.identifier;
 }
 
 //添加圆型覆盖物
@@ -447,7 +454,7 @@ static BMKMapManager *_mapManager = nil;
     ACArgsUnpack(NSDictionary* info) = inArguments;
     uexBaiduMapCircleOverlay *overlay = [[uexBaiduMapCircleOverlay alloc]initWithInfoDictionary: info];
     [self addOverlay: overlay];
-    return overlay.identidier;
+    return overlay.identifier;
 }
 
 //添加多边型覆盖物
@@ -455,7 +462,7 @@ static BMKMapManager *_mapManager = nil;
     ACArgsUnpack(NSDictionary* info) = inArguments;
     uexBaiduMapPolygonOverlay *overlay = [[uexBaiduMapPolygonOverlay alloc]initWithInfoDictionary: info];
     [self addOverlay: overlay];
-    return overlay.identidier;
+    return overlay.identifier;
 }
 
 //添加addGroundOverLayer
@@ -471,7 +478,7 @@ static BMKMapManager *_mapManager = nil;
     }
     overlay.image = image;
     [self addOverlay: overlay];
-    return overlay.identidier;
+    return overlay.identifier;
 }
 
 //添加文字覆盖物
@@ -554,7 +561,7 @@ static BMKMapManager *_mapManager = nil;
     double longitude = mapView.centerCoordinate.longitude;
     float zoomLevel = mapView.zoomLevel;
     [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onZoomLevelChangeListener" arguments: ACArgsPack(@(zoomLevel),@(latitude),@(longitude))];
-
+    [self.mapInfo update:mapView];
 }
 /**
  *点中底图标注后会回调此接口
@@ -565,7 +572,7 @@ static BMKMapManager *_mapManager = nil;
 
 }
 
-
+ 
 /**
  *点中底图空白处会回调此接口
  *@param mapview 地图View
@@ -609,7 +616,9 @@ static BMKMapManager *_mapManager = nil;
 }
 //增加地图手势监听(返回值包括缩放等级和中心点坐标)
 //onMapStatusChange
-
+- (void)mapStatusDidChanged:(BMKMapView *)mapView{
+    [self.mapInfo update:mapView];
+}
 
 //************************UI控制******************************
 ///设定地图View能否支持用户多点缩放(双指)
@@ -885,7 +894,6 @@ static BMKMapManager *_mapManager = nil;
         [tempDict setValue: poiInfo.postcode forKey: @"postCode"];
         [poiInfoList addObject: tempDict];
     }
-    
     [resultDic setObject: totalPoiNum forKey: @"totalPoiNum"];
     [resultDic setObject: totalPageNum forKey: @"totalPageNum"];
     [resultDic setObject: currentPageNum forKey: @"currentPageNum"];
@@ -970,7 +978,7 @@ static NSString *const kBusLineObjectIdentifierPrefix = @"uexBaiduMap.busLine.";
     
     //添加公交线路的overlay
     uexBaiduMapPolylineOverlay *overlay = [[uexBaiduMapPolylineOverlay alloc]init];
-    overlay.identidier = getID();
+    overlay.identifier = getID();
     overlay.fillColor = [UIColor colorWithRed: 0 green: 1 blue: 1 alpha: 1];
     overlay.lineWidth = 3;
     overlay.strokeColor = [UIColor colorWithRed: 0 green: 0 blue: 1 alpha: 0.7];
@@ -985,7 +993,6 @@ static NSString *const kBusLineObjectIdentifierPrefix = @"uexBaiduMap.busLine.";
     }
     overlay.points = points;
     [self addOverlay: overlay];
-    
     //设置地图中心点为起始站点
     BMKBusStation* start = result.busStations.firstObject;
     if (start) {
@@ -1007,7 +1014,7 @@ static NSString *const kBusLineObjectIdentifierPrefix = @"uexBaiduMap.busLine.";
 }
 
 - (void)addRoutePlanObjectsWithResult:(uexBaiduMapRoutePlanResult *)result{
-    if (!self.currentMapView || result) {
+    if (!self.currentMapView || !result) {
         return;
     }
     NSString *identifier = result.identifier;
@@ -1025,7 +1032,7 @@ static NSString *const kBusLineObjectIdentifierPrefix = @"uexBaiduMap.busLine.";
         return;
     }
     uexBaiduMapRoutePlanResult *result = self.routePlanResults[identifier];
-    [self removeOverlayWithIdentifier: result.associatedOverlay.identidier];
+    [self removeOverlayWithIdentifier: result.associatedOverlay.identifier];
     for (uexBaiduMapNodeAnnotation *annotation in result.associatedAnnotations){
         [self removeAnnotationWithIdentifier: annotation.identifier];
     }
@@ -1064,12 +1071,10 @@ static NSString *const kBusLineObjectIdentifierPrefix = @"uexBaiduMap.busLine.";
     NSString * city = [jsDic objectForKey: @"city"];
     NSString * address = [jsDic objectForKey: @"address"];
     
-
     BMKGeoCodeSearchOption * geoCodeSearchOption = [[BMKGeoCodeSearchOption alloc] init];
     geoCodeSearchOption.city = city;
     geoCodeSearchOption.address = address;
 
-    
     uexBaiduGeoCodeSearcher *searcher = [[uexBaiduGeoCodeSearcher alloc]init];
     searcher.option = geoCodeSearchOption;
     [self.searchers addObject: searcher];

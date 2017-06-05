@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface uexBaiduMapOverlay : NSObject
 @property (nonatomic, strong)BMKOverlayView *overlayView;
 @property (nonatomic, strong)id <BMKOverlay> bmkOverlay;
-@property (nonatomic, strong)NSString *identidier;
+@property (nonatomic, strong)NSString *identifier;
 @property (nonatomic, strong, nullable)UIColor *fillColor;
 @property (nonatomic, strong, nullable)UIColor *strokeColor;
 @property (nonatomic, assign)CGFloat lineWidth;

@@ -158,7 +158,7 @@ typedef uexBaiduMapNodeAnnotation * (^NodeAnnotationGenerateBlock)(__kindof BMKR
 
 - (uexBaiduMapPolylineOverlay *)generateOverlayFromRouteLine:(__kindof BMKRouteLine *)plan{
     uexBaiduMapPolylineOverlay *overlay = [[uexBaiduMapPolylineOverlay alloc] init];
-    overlay.identidier = UUID();
+    overlay.identifier = UUID();
     overlay.fillColor = [UIColor colorWithRed:0 green:1 blue:1 alpha:1];
     overlay.strokeColor = [UIColor colorWithRed:0 green:0 blue:1 alpha:0.7];
     overlay.lineWidth = 3;

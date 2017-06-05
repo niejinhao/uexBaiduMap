@@ -165,34 +165,34 @@
     uexBaiduMapNodeData *data = [[uexBaiduMapNodeData alloc] init];
     data.reuseIdentifier = @"uexBaiduMap.NodeAnnotation.Start";
     data.iconNeedOffset = YES;
-    [data setIconPath:@"images/icon_nav_start.png"];
+    [data setBundleImagePath:@"images/icon_nav_start.png"];
     return [[self alloc] initWithData:data];
 }
 + (instancetype)endNodeAnnotation{
     uexBaiduMapNodeData *data = [[uexBaiduMapNodeData alloc] init];
     data.reuseIdentifier = @"uexBaiduMap.NodeAnnotation.End";
     data.iconNeedOffset = YES;
-    [data setIconPath:@"images/icon_nav_end.png"];
+    [data setBundleImagePath:@"images/icon_nav_end.png"];
     return [[self alloc] initWithData:data];
 }
 
 + (instancetype)busNodeAnnotation{
     uexBaiduMapNodeData *data = [[uexBaiduMapNodeData alloc] init];
     data.reuseIdentifier = @"uexBaiduMap.NodeAnnotation.Bus";
-    [data setIconPath:@"images/icon_nav_bus.png"];
+    [data setBundleImagePath:@"images/icon_nav_bus.png"];
     return [[self alloc] initWithData:data];
 }
 + (instancetype)railNodeAnnotation{
     uexBaiduMapNodeData *data = [[uexBaiduMapNodeData alloc] init];
     data.reuseIdentifier = @"uexBaiduMap.NodeAnnotation.Rail";
-    [data setIconPath:@"images/icon_nav_rail.png"];
+    [data setBundleImagePath:@"images/icon_nav_rail.png"];
     return [[self alloc] initWithData:data];
 }
 
 + (instancetype)directionNodeAnnotationWithRotateDegree:(CGFloat)degree{
     uexBaiduMapNodeData *data = [[uexBaiduMapNodeData alloc] init];
     data.reuseIdentifier = @"uexBaiduMap.NodeAnnotation.Direction";
-    [data setIconPath:@"images/icon_direction.png"];
+    [data setBundleImagePath:@"images/icon_direction.png"];
     data.iconNeedRotate = YES;
     data.rotateDegree = degree;
     return [[self alloc] initWithData:data];
@@ -201,7 +201,7 @@
     uexBaiduMapNodeData *data = [[uexBaiduMapNodeData alloc] init];
     data.reuseIdentifier = @"uexBaiduMap.NodeAnnotation.WayPoint";
     data.iconNeedOffset = YES;
-    [data setIconPath:@"images/icon_nav_waypoint.png"];
+    [data setBundleImagePath:@"images/icon_nav_waypoint.png"];
     
     return [[self alloc] initWithData:data];
 }
