@@ -382,6 +382,7 @@ static BMKMapManager *_mapManager = nil;
  *@param mapView 地图View
  *@param views 选中的annotation views
  */
+
 - (void)mapView: (BMKMapView *)mapView didSelectAnnotationView: (BMKAnnotationView *)view{
     id annotation = view.annotation;
     if (![annotation isKindOfClass: [uexBaiduMapCustomAnnotation class]]) {
@@ -538,6 +539,7 @@ static BMKMapManager *_mapManager = nil;
  *@param mapView 地图View
  *@param view 泡泡所属的annotation view
  */
+
 - (void)mapView: (BMKMapView *)mapView annotationViewForBubble: (BMKAnnotationView *)view {
     id annotation = view.annotation;
     if (![annotation isKindOfClass: [uexBaiduMapCustomAnnotation class]]) {
