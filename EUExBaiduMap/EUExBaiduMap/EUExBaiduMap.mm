@@ -34,7 +34,31 @@
 #import "uexBaiduBusLineSearcher.h"
 #import "uexBaiduMapRoutePlanSearcher.h"
 
-@interface EUExBaiduMap()<BMKGeneralDelegate,BMKMapViewDelegate, BMKLocationServiceDelegate>
+@implementation BMKIndoorFloorCell
+
+@synthesize floorTitleLabel = _floorTitleLabel;
+
+- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(nullable NSString *)reuseIdentifier {
+    BMKIndoorFloorCell *cell = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
+    cell.backgroundColor = [UIColor clearColor];
+    
+    _floorTitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 35, 30)];
+    [_floorTitleLabel setTextAlignment:NSTextAlignmentCenter];
+    [_floorTitleLabel setFont:[UIFont systemFontOfSize:14]];
+    [_floorTitleLabel setTextColor:[UIColor blackColor]];
+    [cell addSubview:_floorTitleLabel];
+    
+    UIView *selectBg = [[UIView alloc] initWithFrame:cell.frame];
+    selectBg.backgroundColor = [UIColor colorWithRed:50.0/255 green:120.0/255.0 blue:1 alpha:0.8];
+    cell.selectedBackgroundView = selectBg;
+    
+    return cell;
+}
+
+
+@end
+
+@interface EUExBaiduMap()<BMKGeneralDelegate,BMKMapViewDelegate, BMKLocationServiceDelegate,UITableViewDelegate,UITableViewDataSource>
 
 @property (nonatomic, strong) BMKMapView * currentMapView;
 @property (nonatomic, strong) BMKLocationService * locationService;
@@ -51,6 +75,9 @@
 @property (nonatomic, strong) uexBaiduMapInfo *mapInfo;
 @property (nonatomic, strong) ACJSFunctionRef *cbOpenFunc;
 @property (nonatomic, strong) ACJSFunctionRef *cbGetCurrentLocationFunc;
+@property (nonatomic, strong) UITableView *floorTableView;//显示楼层条
+@property (nonatomic, strong) BMKBaseIndoorMapInfo *indoorMapInfoFocused;//存储当前聚焦的室内图
+
 @end
 
 
@@ -75,6 +102,7 @@ static BMKMapManager *_mapManager = nil;
         _routePlanResults = [NSMutableDictionary dictionary];
         _positionOfCompass = CGPointMake(10, 10);
         _searchers = [NSMutableArray array];
+        _indoorMapInfoFocused = [[BMKBaseIndoorMapInfo alloc] init];
     }
     return self;
 }
@@ -136,6 +164,7 @@ static BMKMapManager *_mapManager = nil;
     if (self.currentMapView) {
         return;
     }
+
     NSString * baiduMapKey = [[[NSBundle mainBundle] infoDictionary] objectForKey: @"uexBaiduMapKey"];
     if(![_mapManager start: baiduMapKey generalDelegate: self]) {
         return;
@@ -153,6 +182,21 @@ static BMKMapManager *_mapManager = nil;
     [self.currentMapView setDelegate: self];
     [self.currentMapView viewWillAppear];
     [[self.webViewEngine webView] addSubview: self.currentMapView];
+    
+    //添加楼层条
+    _floorTableView = [[UITableView alloc] init];
+    CGFloat floorH = 150;
+    CGFloat floorY = self.currentMapView.frame.size.height - floorH - 100;
+    _floorTableView.frame = CGRectMake(10, floorY, 35, floorH);
+    _floorTableView.alpha = 0.8;
+    _floorTableView.layer.borderWidth = 1;
+    _floorTableView.layer.borderColor = [[UIColor grayColor] colorWithAlphaComponent:0.7].CGColor;
+    _floorTableView.delegate = self;
+    _floorTableView.dataSource = self;
+    _floorTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    _floorTableView.hidden = YES;
+    [self.currentMapView addSubview:_floorTableView];
+    
     if (lonNum && latNum) {
         double  longitude = [lonNum doubleValue];
         double  latitude = [latNum doubleValue];
@@ -164,6 +208,7 @@ static BMKMapManager *_mapManager = nil;
         @strongify(self);
         [self.webViewEngine callbackWithFunctionKeyPath: @"uexBaiduMap.onMapStatusChangeListener" arguments: ACArgsPack(changeInfo.ac_JSONFragment)];
     }];
+    self.currentMapView.baseIndoorMapEnabled = YES;
     self.cbOpenFunc = callback;
 }
 
@@ -820,6 +865,7 @@ static BMKMapManager *_mapManager = nil;
         [self.searchers removeObject: searcher];
         
     }];
+    
 }
 
 //poiSearchInBounds 区域内搜索
@@ -1349,5 +1395,71 @@ static NSString *const kBusLineObjectIdentifierPrefix = @"uexBaiduMap.busLine.";
     self.currentMapView.showsUserLocation = YES;
 }
 
+#pragma mark - UITableViewDelegate & UITableViewDataSource
+
+- (UITableViewCell*)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    BMKIndoorFloorCell *cell = [tableView dequeueReusableCellWithIdentifier:@"FloorCell"];
+    if (cell == nil) {
+        cell = [[BMKIndoorFloorCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"FloorCell"];
+    }
+    
+    NSString *title = [NSString stringWithFormat:@"%@",[_indoorMapInfoFocused.arrStrFloors objectAtIndex:indexPath.row]];
+    cell.floorTitleLabel.text = title;
+    
+    return cell;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return _indoorMapInfoFocused.arrStrFloors.count;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return 30.0f;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    //进行楼层切换
+    NSArray *annotationArray = [NSArray arrayWithArray:self.currentMapView.annotations];
+    [self.currentMapView removeAnnotations:annotationArray];
+    NSArray *overlayArray = [NSArray arrayWithArray:self.currentMapView.overlays];
+    [self.currentMapView removeOverlays:overlayArray];
+    BMKSwitchIndoorFloorError error = [self.currentMapView switchBaseIndoorMapFloor:[_indoorMapInfoFocused.arrStrFloors objectAtIndex:indexPath.row] withID:_indoorMapInfoFocused.strID];
+    if (error == BMKSwitchIndoorFloorSuccess) {
+        [tableView scrollToNearestSelectedRowAtScrollPosition:UITableViewScrollPositionMiddle animated:YES];
+        NSLog(@"切换楼层成功");
+    } else {
+        [tableView deselectRowAtIndexPath:indexPath animated:NO];
+    }
+}
+
+
+#pragma mark - BMKMapViewDelegate
+/**
+ *地图进入/移出室内图会调用此接口
+ *@param mapview 地图View
+ *@param flag  YES:进入室内图; NO:移出室内图
+ *@param info 室内图信息
+ */
+-(void)mapview:(BMKMapView *)mapView baseIndoorMapWithIn:(BOOL)flag baseIndoorMapInfo:(BMKBaseIndoorMapInfo *)info
+{
+    BOOL showIndoor = NO;
+    if (flag) {//进入室内图
+        if (info != nil && info.arrStrFloors.count > 0) {
+            _indoorMapInfoFocused.strID = info.strID;
+            _indoorMapInfoFocused.strFloor = info.strFloor;
+            _indoorMapInfoFocused.arrStrFloors = info.arrStrFloors;
+            
+            [_floorTableView reloadData];
+            NSInteger index = [info.arrStrFloors indexOfObject:info.strFloor];
+            [_floorTableView selectRowAtIndexPath:[NSIndexPath indexPathForRow:index inSection:0] animated:NO scrollPosition:UITableViewScrollPositionMiddle];
+            
+            showIndoor = YES;
+        }
+    }
+    
+    _floorTableView.hidden = !showIndoor;
+//    _searchView.hidden = !showIndoor;
+
+}
 
 @end

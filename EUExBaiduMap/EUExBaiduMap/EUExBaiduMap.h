@@ -23,6 +23,12 @@
 
 #import <Foundation/Foundation.h>
 
+@interface BMKIndoorFloorCell : UITableViewCell
+
+@property (strong, nonatomic) UILabel *floorTitleLabel;
+
+@end
+
 @interface EUExBaiduMap : EUExBase
 
 @end

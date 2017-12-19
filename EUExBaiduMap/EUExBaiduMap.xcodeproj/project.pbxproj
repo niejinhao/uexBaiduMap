@@ -36,6 +36,8 @@
 		42961A691D0D21D800005263 /* uexBaiduReverseGeocodeSearcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 42961A681D0D21D800005263 /* uexBaiduReverseGeocodeSearcher.m */; };
 		429E86551E0BA23300DFB0E8 /* openssl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 429E86541E0BA23300DFB0E8 /* openssl.framework */; };
 		429E86581E0BA27800DFB0E8 /* openssl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 429E86541E0BA23300DFB0E8 /* openssl.framework */; };
+		CD15FE801FE7C404000E8973 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CD15FE7E1FE7C404000E8973 /* libcrypto.a */; };
+		CD15FE811FE7C404000E8973 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CD15FE7F1FE7C404000E8973 /* libssl.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -105,6 +107,8 @@
 		42961A671D0D21D800005263 /* uexBaiduReverseGeocodeSearcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uexBaiduReverseGeocodeSearcher.h; sourceTree = "<group>"; };
 		42961A681D0D21D800005263 /* uexBaiduReverseGeocodeSearcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = uexBaiduReverseGeocodeSearcher.m; sourceTree = "<group>"; };
 		429E86541E0BA23300DFB0E8 /* openssl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = openssl.framework; sourceTree = "<group>"; };
+		CD15FE7E1FE7C404000E8973 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libcrypto.a; sourceTree = "<group>"; };
+		CD15FE7F1FE7C404000E8973 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libssl.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,6 +116,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD15FE811FE7C404000E8973 /* libssl.a in Frameworks */,
+				CD15FE801FE7C404000E8973 /* libcrypto.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -165,6 +171,7 @@
 		3C70BD1E1A0733D200C32A1F /* EUExBaiduMap */ = {
 			isa = PBXGroup;
 			children = (
+				CD15FE7D1FE7C404000E8973 /* thirdlibs */,
 				423153141EDE5A9B00FBC502 /* AppCanKit.framework */,
 				4231530B1EDE566600FBC502 /* mapapi.bundle */,
 				423152ED1EDE564F00FBC502 /* BaiduMapAPI_Base.framework */,
@@ -213,6 +220,15 @@
 				423153221EDEA27700FBC502 /* uexBaiduMapInfo.m */,
 			);
 			path = sourceCode;
+			sourceTree = "<group>";
+		};
+		CD15FE7D1FE7C404000E8973 /* thirdlibs */ = {
+			isa = PBXGroup;
+			children = (
+				CD15FE7E1FE7C404000E8973 /* libcrypto.a */,
+				CD15FE7F1FE7C404000E8973 /* libssl.a */,
+			);
+			path = thirdlibs;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -367,6 +383,10 @@
 				GCC_PREFIX_HEADER = $SRCROOT/EUExBaiduMap/PrefixHeader.pch;
 				INFOPLIST_FILE = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/EUExBaiduMap/thirdlibs",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zywx.uexBaiduMapBundle;
 				PRODUCT_MODULE_NAME = uexBaiduMap;
@@ -396,6 +416,10 @@
 				GCC_PREFIX_HEADER = $SRCROOT/EUExBaiduMap/PrefixHeader.pch;
 				INFOPLIST_FILE = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/EUExBaiduMap/thirdlibs",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zywx.uexBaiduMapBundle;
 				PRODUCT_MODULE_NAME = uexBaiduMap;
@@ -506,6 +530,7 @@
 					"$(PROJECT_DIR)/EUExBaiduMap/sourceCode/BaiduMap_IOSSDK_v2.5.0_Lib/Release-iphonesimulator",
 					"$(PROJECT_DIR)/EUExBaiduMap/sourceCode/BaiduMap_IOSSDK_v2.6.0_Lib/Release-iphoneos",
 					"$(PROJECT_DIR)/EUExBaiduMap/sourceCode/BaiduMap_IOSSDK_v2.6.0_Lib/Release-iphonesimulator",
+					"$(PROJECT_DIR)",
 				);
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_LDFLAGS = "-ObjC";
@@ -531,6 +556,7 @@
 					"$(PROJECT_DIR)/EUExBaiduMap/sourceCode/BaiduMap_IOSSDK_v2.5.0_Lib/Release-iphonesimulator",
 					"$(PROJECT_DIR)/EUExBaiduMap/sourceCode/BaiduMap_IOSSDK_v2.6.0_Lib/Release-iphoneos",
 					"$(PROJECT_DIR)/EUExBaiduMap/sourceCode/BaiduMap_IOSSDK_v2.6.0_Lib/Release-iphonesimulator",
+					"$(PROJECT_DIR)",
 				);
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_LDFLAGS = "-ObjC";
